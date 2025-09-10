@@ -38,16 +38,34 @@ interface CheckoutData {
 
 export default function CartScreen() {
   const { cart, updateQuantity, removeFromCart, applyPromoCode, removePromoCode } = useCart();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showPromoInput, setShowPromoInput] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [checkoutData, setCheckoutData] = useState<CheckoutData>({
-    deliveryAddress: (user as any)?.addresses?.find((addr: any) => addr.is_default) || null,
-    paymentMethod: (user as any)?.payment_methods?.find((pm: any) => pm.is_default) || null,
+    deliveryAddress: user?.addresses?.find((addr) => addr.is_default) || null,
+    paymentMethod: user?.payment_methods?.find((pm) => pm.is_default) || null,
     specialInstructions: '',
     promoCode: cart?.promo_code || '',
   });
+
+  // Auto-login for demo purposes if user is not logged in
+  React.useEffect(() => {
+    if (!user) {
+      login('demo@chopchoo.com', 'password').catch(console.error);
+    }
+  }, [user, login]);
+
+  // Update checkout data when user changes
+  React.useEffect(() => {
+    if (user) {
+      setCheckoutData(prev => ({
+        ...prev,
+        deliveryAddress: prev.deliveryAddress || user.addresses?.find((addr) => addr.is_default) || null,
+        paymentMethod: prev.paymentMethod || user.payment_methods?.find((pm) => pm.is_default) || null,
+      }));
+    }
+  }, [user]);
 
   const handleQuantityChange = async (menuItemId: string, customizations: any[], newQuantity: number) => {
     try {
@@ -94,12 +112,12 @@ export default function CartScreen() {
 
   const handlePlaceOrder = async () => {
     if (!checkoutData.deliveryAddress) {
-      console.error('Missing delivery address');
+      alert('Please add a delivery address to continue');
       return;
     }
 
     if (!checkoutData.paymentMethod) {
-      console.error('Missing payment method');
+      alert('Please add a payment method to continue');
       return;
     }
 
