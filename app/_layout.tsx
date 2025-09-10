@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { trpc, trpcClient } from "@/lib/trpc";
 import { AuthProvider } from "@/providers/auth-provider";
 import { VendorProvider } from "@/providers/vendor-provider";
 import { CartProvider } from "@/providers/cart-provider";
@@ -113,15 +114,17 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <VendorProvider>
-            <CartProvider>
-              <RootLayoutNav />
-            </CartProvider>
-          </VendorProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <VendorProvider>
+              <CartProvider>
+                <RootLayoutNav />
+              </CartProvider>
+            </VendorProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </trpc.Provider>
     </GestureHandlerRootView>
   );
 }
