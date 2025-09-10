@@ -3,6 +3,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
+import webhookHandler from "./webhook-handler";
 
 // app will be mounted at /api
 const app = new Hono();
@@ -19,6 +20,9 @@ app.use(
     createContext,
   })
 );
+
+// Mount webhook handlers
+app.route("/webhook", webhookHandler);
 
 // Simple health check endpoint
 app.get("/", (c) => {
