@@ -50,10 +50,38 @@ export default function PaymentMethodsScreen() {
       'Choose payment method type',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Credit/Debit Card', onPress: () => console.log('Add card') },
-        { text: 'Mobile Money', onPress: () => console.log('Add mobile money') },
+        { text: 'Credit/Debit Card', onPress: () => handleAddCard() },
+        { text: 'Mobile Money', onPress: () => handleAddMobileMoney() },
       ]
     );
+  };
+
+  const handleAddCard = () => {
+    // Simulate adding a card
+    const newCard: PaymentMethod = {
+      id: Date.now().toString(),
+      type: 'card',
+      name: 'New Card',
+      details: '**** **** **** ' + Math.floor(1000 + Math.random() * 9000),
+      isDefault: paymentMethods.length === 0,
+    };
+    setPaymentMethods(prev => [...prev, newCard]);
+    Alert.alert('Success', 'Card added successfully!');
+  };
+
+  const handleAddMobileMoney = () => {
+    // Simulate adding mobile money
+    const providers = ['MTN', 'Vodafone', 'AirtelTigo'];
+    const randomProvider = providers[Math.floor(Math.random() * providers.length)];
+    const newMobileMoney: PaymentMethod = {
+      id: Date.now().toString(),
+      type: 'mobile_money',
+      name: `${randomProvider} Mobile Money`,
+      details: '0' + Math.floor(200000000 + Math.random() * 99999999),
+      isDefault: paymentMethods.length === 0,
+    };
+    setPaymentMethods(prev => [...prev, newMobileMoney]);
+    Alert.alert('Success', 'Mobile Money account added successfully!');
   };
 
   const handleDeleteMethod = (id: string) => {

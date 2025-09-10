@@ -191,8 +191,8 @@ export default function VendorSignupScreen() {
         phone: formData.phone,
         email: formData.email,
         rating: 0,
-        is_active: false, // Will be activated after admin approval
-        status: "pending" as const,
+        is_active: true, // Set to true for testing - in production, admin would approve
+        status: "approved" as const, // Set to approved for testing - in production, would be pending
         delivery_radius: Number(formData.deliveryRadius),
         opening_hours: openingHours,
         owner_name: formData.ownerName,

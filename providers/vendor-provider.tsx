@@ -113,7 +113,9 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
   }, [vendors]);
 
   const getActiveVendors = useCallback(() => {
-    return vendors.filter(vendor => vendor.is_active && vendor.status === "approved");
+    // For testing purposes, show all vendors (including pending ones)
+    // In production, you would only show approved vendors
+    return vendors.filter(vendor => vendor.status === "approved" || vendor.status === "pending");
   }, [vendors]);
 
   const addVendor = useCallback(async (vendorData: Omit<Vendor, "id" | "created_at">) => {

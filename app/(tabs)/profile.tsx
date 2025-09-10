@@ -46,37 +46,37 @@ export default function ProfileScreen() {
       icon: User,
       title: "Personal Information",
       subtitle: "Update your details",
-      onPress: () => router.push("../profile/personal-info")
+      onPress: () => router.push("/profile/personal-info")
     },
     {
       icon: MapPin,
       title: "Addresses",
       subtitle: "Manage delivery addresses",
-      onPress: () => router.push("../profile/addresses")
+      onPress: () => router.push("/profile/addresses")
     },
     {
       icon: CreditCard,
       title: "Payment Methods",
       subtitle: "Cards and mobile money",
-      onPress: () => router.push("../profile/payment-methods")
+      onPress: () => router.push("/profile/payment-methods")
     },
     {
       icon: Bell,
       title: "Notifications",
       subtitle: "Order updates and offers",
-      onPress: () => router.push("../profile/notifications")
+      onPress: () => router.push("/profile/notifications")
     },
     {
       icon: HelpCircle,
       title: "Help & Support",
       subtitle: "Get help with your orders",
-      onPress: () => router.push("../profile/help")
+      onPress: () => router.push("/profile/help")
     },
     {
       icon: Settings,
       title: "Settings",
       subtitle: "App preferences",
-      onPress: () => router.push("../profile/settings")
+      onPress: () => router.push("/profile/settings")
     },
   ];
 
@@ -116,7 +116,7 @@ export default function ProfileScreen() {
           </View>
           <TouchableOpacity 
             style={styles.editButton}
-            onPress={() => router.push("../profile/personal-info")}
+            onPress={() => router.push("/profile/personal-info")}
           >
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
