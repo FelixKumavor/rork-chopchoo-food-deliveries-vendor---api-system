@@ -14,6 +14,7 @@ import {
 import { useCart } from '@/providers/cart-provider';
 import { useAuth } from '@/providers/auth-provider';
 import { router } from 'expo-router';
+import { trpc } from '@/lib/trpc';
 import {
   ShoppingCart,
   Plus,
@@ -110,6 +111,8 @@ export default function CartScreen() {
     }
   };
 
+  const createOrderMutation = trpc.orders.create.useMutation();
+
   const handlePlaceOrder = async () => {
     if (!checkoutData.deliveryAddress) {
       alert('Please add a delivery address to continue');
@@ -121,12 +124,17 @@ export default function CartScreen() {
       return;
     }
 
+    if (!cart) {
+      alert('Your cart is empty');
+      return;
+    }
+
     setIsCheckingOut(true);
 
     try {
       const orderData = {
-        vendor_id: cart?.vendor_id,
-        items: cart?.items.map(item => ({
+        vendor_id: cart.vendor_id,
+        items: cart.items.map(item => ({
           menu_item_id: item.menu_item.id,
           quantity: item.quantity,
           customizations: item.customizations,
@@ -134,26 +142,42 @@ export default function CartScreen() {
           unit_price: item.menu_item.price,
           total_price: item.total_price,
         })),
-        delivery_address: checkoutData.deliveryAddress,
+        delivery_address: {
+          name: checkoutData.deliveryAddress.name,
+          phone: checkoutData.deliveryAddress.phone,
+          address: checkoutData.deliveryAddress.address,
+          city: checkoutData.deliveryAddress.city,
+          coordinates: checkoutData.deliveryAddress.coordinates,
+          instructions: checkoutData.deliveryAddress.instructions,
+        },
         payment_method: checkoutData.paymentMethod.type,
         special_instructions: checkoutData.specialInstructions,
         promo_code: checkoutData.promoCode,
-        subtotal: cart?.subtotal,
-        delivery_fee: cart?.delivery_fee,
-        service_fee: cart?.service_fee,
-        discount_amount: cart?.discount_amount,
-        total: cart?.total,
+        subtotal: cart.subtotal,
+        delivery_fee: cart.delivery_fee,
+        service_fee: cart.service_fee,
+        discount_amount: cart.discount_amount,
+        total: cart.total,
       };
 
       console.log('Placing order:', orderData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const result = await createOrderMutation.mutateAsync(orderData);
       
-      console.log('Order placed successfully!');
-      router.push('/(tabs)/orders');
-    } catch {
-      console.error('Failed to place order');
+      if (result.success) {
+        console.log('Order placed successfully!', result.order);
+        
+        // Clear cart after successful order
+        // await clearCart();
+        
+        // Navigate to order tracking with the order ID
+        router.push(`/order-tracking?orderId=${result.order.id}`);
+      } else {
+        throw new Error('Order creation failed');
+      }
+    } catch (error: any) {
+      console.error('Failed to place order:', error);
+      alert(error?.message || 'Failed to place order. Please try again.');
     } finally {
       setIsCheckingOut(false);
     }

@@ -7,59 +7,58 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MapPin, Star, ShoppingCart, Plus, Minus, Trash2 } from "lucide-react-native";
+import { MapPin, Star, ShoppingCart, Plus, Minus, Trash2, Clock, CheckCircle, ChefHat, Package, Truck } from "lucide-react-native";
 import { useCart } from "@/providers/cart-provider";
+import { trpc } from '@/lib/trpc';
 import { router } from "expo-router";
 
-const mockOrders = [
-  {
-    id: "1",
-    restaurant: "Mama's Kitchen",
-    logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&h=100&fit=crop&crop=center",
-    items: ["Jollof Rice", "Grilled Chicken", "Kelewele"],
-    total: "GH₵45.50",
-    status: "delivered",
-    date: "2024-01-15",
-    rating: 4.5,
-  },
-  {
-    id: "2",
-    restaurant: "Pizza Palace",
-    logo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100&h=100&fit=crop&crop=center",
-    items: ["Margherita Pizza", "Coca Cola"],
-    total: "GH₵38.00",
-    status: "on_way",
-    date: "2024-01-15",
-    rating: null,
-  },
-  {
-    id: "3",
-    restaurant: "Burger Spot",
-    logo: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=100&h=100&fit=crop&crop=center",
-    items: ["Classic Burger", "Fries", "Milkshake"],
-    total: "GH₵52.75",
-    status: "preparing",
-    date: "2024-01-14",
-    rating: null,
-  },
-];
+
 
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const { cart, updateQuantity, removeFromCart, itemCount } = useCart();
   const [activeTab, setActiveTab] = useState<'cart' | 'orders'>('cart');
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch orders data
+  const { data: ordersData, isLoading, refetch } = trpc.orders.get.useQuery(
+    {
+      customer_id: 'demo_customer_123',
+      limit: 20,
+      offset: 0,
+    },
+    {
+      enabled: activeTab === 'orders',
+      refetchInterval: 30000, // Refetch every 30 seconds for ongoing orders
+    }
+  );
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
   
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "pending":
+        return "#8E8E93";
+      case "confirmed":
+        return "#34C759";
+      case "preparing":
+        return "#FF6B35";
+      case "ready":
+        return "#FF9800";
+      case "out_for_delivery":
+        return "#007AFF";
       case "delivered":
         return "#4CAF50";
-      case "on_way":
-        return "#FF9800";
-      case "preparing":
-        return "#2196F3";
+      case "cancelled":
+        return "#FF3B30";
       default:
         return "#8E8E93";
     }
@@ -67,14 +66,40 @@ export default function OrdersScreen() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "delivered":
-        return "Delivered";
-      case "on_way":
-        return "On the way";
+      case "pending":
+        return "Order Placed";
+      case "confirmed":
+        return "Confirmed";
       case "preparing":
         return "Preparing";
+      case "ready":
+        return "Ready";
+      case "out_for_delivery":
+        return "On the way";
+      case "delivered":
+        return "Delivered";
+      case "cancelled":
+        return "Cancelled";
       default:
         return "Unknown";
+    }
+  };
+
+  const formatOrderTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor(diffInHours * 60);
+      return `${diffInMinutes} mins ago`;
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)} hours ago`;
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays} days ago`;
     }
   };
 
@@ -99,12 +124,18 @@ export default function OrdersScreen() {
   };
 
   const renderOrderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.orderCard}>
+    <TouchableOpacity 
+      style={styles.orderCard}
+      onPress={() => router.push(`/order-tracking?orderId=${item.id}`)}
+    >
       <View style={styles.orderHeader}>
-        <Image source={{ uri: item.logo }} style={styles.orderRestaurantLogo} />
+        <Image 
+          source={{ uri: item.vendor?.logo || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100' }} 
+          style={styles.orderRestaurantLogo} 
+        />
         <View style={styles.orderInfo}>
-          <Text style={styles.orderRestaurantName}>{item.restaurant}</Text>
-          <Text style={styles.orderDate}>{item.date}</Text>
+          <Text style={styles.orderRestaurantName}>{item.vendor?.name || 'Restaurant'}</Text>
+          <Text style={styles.orderDate}>{formatOrderTime(item.created_at)}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
           <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
@@ -113,15 +144,15 @@ export default function OrdersScreen() {
 
       <View style={styles.orderDetails}>
         <Text style={styles.itemsText}>
-          {item.items.join(", ")}
+          {item.items.map((orderItem: any) => `${orderItem.quantity}x ${orderItem.menu_item?.name}`).join(", ")}
         </Text>
-        <Text style={styles.totalText}>{item.total}</Text>
+        <Text style={styles.totalText}>GH₵{item.total.toFixed(2)}</Text>
       </View>
 
-      {item.status === "delivered" && item.rating && (
+      {item.status === "delivered" && (
         <View style={styles.ratingContainer}>
           <Star size={16} color="#FFD700" fill="#FFD700" />
-          <Text style={styles.ratingText}>You rated {item.rating}/5</Text>
+          <Text style={styles.ratingText}>Rate this order</Text>
         </View>
       )}
 
@@ -131,7 +162,10 @@ export default function OrdersScreen() {
             <Text style={styles.reorderText}>Reorder</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.trackButton}>
+          <TouchableOpacity 
+            style={styles.trackButton}
+            onPress={() => router.push(`/order-tracking?orderId=${item.id}`)}
+          >
             <MapPin size={16} color="#FF6B35" />
             <Text style={styles.trackText}>Track Order</Text>
           </TouchableOpacity>
@@ -285,13 +319,30 @@ export default function OrdersScreen() {
 
       {activeTab === 'cart' ? (
         renderCartContent()
+      ) : isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B35" />
+          <Text style={styles.loadingText}>Loading your orders...</Text>
+        </View>
       ) : (
         <FlatList
-          data={mockOrders}
+          data={ordersData?.orders || []}
           renderItem={renderOrderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.ordersList}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Package size={60} color="#E5E5E7" />
+              <Text style={styles.emptyStateTitle}>No orders yet</Text>
+              <Text style={styles.emptyStateSubtitle}>
+                Your order history will appear here
+              </Text>
+            </View>
+          }
         />
       )}
     </View>
@@ -642,5 +693,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#FF6B35",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#8E8E93',
   },
 });

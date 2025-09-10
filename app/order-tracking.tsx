@@ -8,8 +8,11 @@ import {
   Image,
   SafeAreaView,
   Animated,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { trpc } from '@/lib/trpc';
 import {
   ArrowLeft,
   MapPin,
@@ -32,68 +35,76 @@ interface OrderStatus {
 }
 
 export default function OrderTrackingScreen() {
-  const [orderStatuses, setOrderStatuses] = useState<OrderStatus[]>([
-    {
-      id: '1',
-      title: 'Order Confirmed',
-      description: 'Your order has been confirmed by the restaurant',
-      time: '2:30 PM',
-      completed: true,
-      active: false,
-    },
-    {
-      id: '2',
-      title: 'Preparing Your Food',
-      description: 'The restaurant is preparing your delicious meal',
-      time: '2:35 PM',
-      completed: true,
-      active: true,
-    },
-    {
-      id: '3',
-      title: 'Out for Delivery',
-      description: 'Your order is on the way to your location',
-      completed: false,
-      active: false,
-    },
-    {
-      id: '4',
-      title: 'Delivered',
-      description: 'Enjoy your meal!',
-      completed: false,
-      active: false,
-    },
-  ]);
-
-  const [estimatedTime, setEstimatedTime] = useState(25);
+  const { orderId } = useLocalSearchParams<{ orderId: string }>();
+  const [refreshing, setRefreshing] = useState(false);
   const progressAnimation = new Animated.Value(0.5);
 
+  // Fetch order tracking data
+  const { data: trackingData, isLoading, refetch } = trpc.orders.track.useQuery(
+    { order_id: orderId || 'demo_order' },
+    {
+      enabled: !!orderId,
+      refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    }
+  );
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  const getEstimatedTime = () => {
+    if (!trackingData?.estimated_delivery_time) return 'Calculating...';
+    
+    const estimatedTime = new Date(trackingData.estimated_delivery_time);
+    const now = new Date();
+    const diffMinutes = Math.max(0, Math.floor((estimatedTime.getTime() - now.getTime()) / (1000 * 60)));
+    
+    if (diffMinutes === 0) return 'Arriving now';
+    if (diffMinutes < 60) return `${diffMinutes} mins`;
+    
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  const getProgressValue = () => {
+    if (!trackingData) return 0.2;
+    
+    const statusProgress: { [key: string]: number } = {
+      'pending': 0.2,
+      'confirmed': 0.4,
+      'preparing': 0.6,
+      'ready': 0.7,
+      'out_for_delivery': 0.9,
+      'delivered': 1.0,
+    };
+    
+    return statusProgress[trackingData.status] || 0.2;
+  };
+
   useEffect(() => {
-    // Simulate order progress
-    const timer = setInterval(() => {
-      setEstimatedTime(prev => Math.max(0, prev - 1));
-    }, 60000); // Update every minute
+    if (trackingData) {
+      // Animate progress based on order status
+      Animated.timing(progressAnimation, {
+        toValue: getProgressValue(),
+        duration: 1000,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [trackingData]);
 
-    // Animate progress
-    Animated.timing(progressAnimation, {
-      toValue: 0.7,
-      duration: 2000,
-      useNativeDriver: false,
-    }).start();
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const getStatusIcon = (status: OrderStatus, index: number) => {
-    if (status.completed) {
+  const getStatusIcon = (statusKey: string, isCompleted: boolean, isActive: boolean) => {
+    if (isCompleted) {
       return <CheckCircle size={24} color="#34C759" />;
     }
     
-    if (status.active) {
-      switch (index) {
-        case 1:
+    if (isActive) {
+      switch (statusKey) {
+        case 'preparing':
           return <ChefHat size={24} color="#FF6B35" />;
-        case 2:
+        case 'out_for_delivery':
           return <Truck size={24} color="#FF6B35" />;
         default:
           return <Package size={24} color="#FF6B35" />;
@@ -107,6 +118,65 @@ export default function OrderTrackingScreen() {
     );
   };
 
+  const getOrderStatuses = () => {
+    const currentStatus = trackingData?.status || 'pending';
+    
+    const statuses = [
+      { key: 'pending', title: 'Order Placed', description: 'Your order has been received' },
+      { key: 'confirmed', title: 'Order Confirmed', description: 'Restaurant confirmed your order' },
+      { key: 'preparing', title: 'Preparing Food', description: 'Your delicious meal is being prepared' },
+      { key: 'ready', title: 'Ready for Pickup', description: 'Order is ready and waiting for rider' },
+      { key: 'out_for_delivery', title: 'Out for Delivery', description: 'Your order is on the way' },
+      { key: 'delivered', title: 'Delivered', description: 'Enjoy your meal!' },
+    ];
+    
+    const currentIndex = statuses.findIndex(s => s.key === currentStatus);
+    
+    return statuses.map((status, index) => ({
+      ...status,
+      completed: index < currentIndex,
+      active: index === currentIndex,
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color="#1C1C1E" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Track Order</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B35" />
+          <Text style={styles.loadingText}>Loading order details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!trackingData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color="#1C1C1E" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Track Order</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Order not found</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const orderStatuses = getOrderStatuses();
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -117,7 +187,13 @@ export default function OrderTrackingScreen() {
         <Text style={styles.headerTitle}>Track Order</Text>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
         {/* Order Info Card */}
         <View style={styles.orderCard}>
           <View style={styles.orderHeader}>
@@ -126,9 +202,11 @@ export default function OrderTrackingScreen() {
               style={styles.restaurantImage}
             />
             <View style={styles.orderInfo}>
-              <Text style={styles.restaurantName}>Mama's Kitchen</Text>
-              <Text style={styles.orderNumber}>Order #12345</Text>
-              <Text style={styles.orderTime}>Placed at 2:30 PM</Text>
+              <Text style={styles.restaurantName}>{trackingData.vendor.name}</Text>
+              <Text style={styles.orderNumber}>Order #{trackingData.order_id.slice(-8)}</Text>
+              <Text style={styles.orderTime}>
+                Status: {trackingData.status.replace('_', ' ').toUpperCase()}
+              </Text>
             </View>
           </View>
           
@@ -136,7 +214,7 @@ export default function OrderTrackingScreen() {
           <View style={styles.estimatedTimeCard}>
             <Clock size={20} color="#FF6B35" />
             <Text style={styles.estimatedTimeText}>
-              Estimated delivery: {estimatedTime} mins
+              Estimated delivery: {getEstimatedTime()}
             </Text>
           </View>
         </View>
@@ -161,36 +239,47 @@ export default function OrderTrackingScreen() {
         {/* Order Status Timeline */}
         <View style={styles.timelineContainer}>
           <Text style={styles.sectionTitle}>Order Status</Text>
-          {orderStatuses.map((status, index) => (
-            <View key={status.id} style={styles.timelineItem}>
-              <View style={styles.timelineIconContainer}>
-                {getStatusIcon(status, index)}
-                {index < orderStatuses.length - 1 && (
-                  <View
+          {orderStatuses.map((status, index) => {
+            const matchingUpdate = trackingData.tracking_updates?.find(
+              update => update.status === status.key
+            );
+            
+            return (
+              <View key={status.key} style={styles.timelineItem}>
+                <View style={styles.timelineIconContainer}>
+                  {getStatusIcon(status.key, status.completed, status.active)}
+                  {index < orderStatuses.length - 1 && (
+                    <View
+                      style={[
+                        styles.timelineLine,
+                        status.completed && styles.timelineLineCompleted,
+                      ]}
+                    />
+                  )}
+                </View>
+                <View style={styles.timelineContent}>
+                  <Text
                     style={[
-                      styles.timelineLine,
-                      status.completed && styles.timelineLineCompleted,
+                      styles.timelineTitle,
+                      status.active && styles.timelineTitleActive,
+                      status.completed && styles.timelineTitleCompleted,
                     ]}
-                  />
-                )}
+                  >
+                    {status.title}
+                  </Text>
+                  <Text style={styles.timelineDescription}>{status.description}</Text>
+                  {matchingUpdate && (
+                    <Text style={styles.timelineTime}>
+                      {new Date(matchingUpdate.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  )}
+                </View>
               </View>
-              <View style={styles.timelineContent}>
-                <Text
-                  style={[
-                    styles.timelineTitle,
-                    status.active && styles.timelineTitleActive,
-                    status.completed && styles.timelineTitleCompleted,
-                  ]}
-                >
-                  {status.title}
-                </Text>
-                <Text style={styles.timelineDescription}>{status.description}</Text>
-                {status.time && (
-                  <Text style={styles.timelineTime}>{status.time}</Text>
-                )}
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Delivery Address */}
@@ -200,29 +289,31 @@ export default function OrderTrackingScreen() {
             <Text style={styles.addressTitle}>Delivery Address</Text>
           </View>
           <Text style={styles.addressText}>
-            123 Main Street, Apt 4B{'\n'}
-            New York, NY 10001
+            {trackingData.delivery_address.name}{'\n'}
+            {trackingData.delivery_address.address}{'\n'}
+            {trackingData.delivery_address.city}
           </Text>
         </View>
 
-        {/* Order Items */}
-        <View style={styles.itemsCard}>
-          <Text style={styles.sectionTitle}>Order Items</Text>
-          <View style={styles.orderItem}>
-            <Text style={styles.itemQuantity}>2x</Text>
-            <Text style={styles.itemName}>Jollof Rice with Grilled Chicken</Text>
-            <Text style={styles.itemPrice}>$24.00</Text>
+        {/* Rider Info */}
+        {trackingData.rider && (
+          <View style={styles.riderCard}>
+            <View style={styles.riderHeader}>
+              <View style={styles.riderInfo}>
+                <Text style={styles.riderName}>{trackingData.rider.name}</Text>
+                <Text style={styles.riderRating}>⭐ {trackingData.rider.rating}</Text>
+              </View>
+              <View style={styles.riderActions}>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Phone size={20} color="#FF6B35" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton}>
+                  <MessageCircle size={20} color="#FF6B35" />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-          <View style={styles.orderItem}>
-            <Text style={styles.itemQuantity}>1x</Text>
-            <Text style={styles.itemName}>Kelewele (Spiced Plantain)</Text>
-            <Text style={styles.itemPrice}>$8.50</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>$35.50</Text>
-          </View>
-        </View>
+        )}
 
         {/* Contact Actions */}
         <View style={styles.contactCard}>
@@ -525,5 +616,80 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF6B35',
     marginLeft: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  riderCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  riderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  riderInfo: {
+    flex: 1,
+  },
+  riderName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
+    marginBottom: 4,
+  },
+  riderRating: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  riderActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF3E0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
