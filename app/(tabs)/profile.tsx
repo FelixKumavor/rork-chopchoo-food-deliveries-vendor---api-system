@@ -46,37 +46,37 @@ export default function ProfileScreen() {
       icon: User,
       title: "Personal Information",
       subtitle: "Update your details",
-      onPress: () => console.log('Personal info - Coming soon')
+      onPress: () => router.push("/profile/personal-info")
     },
     {
       icon: MapPin,
       title: "Addresses",
       subtitle: "Manage delivery addresses",
-      onPress: () => console.log('Addresses - Coming soon')
+      onPress: () => router.push("/profile/addresses")
     },
     {
       icon: CreditCard,
       title: "Payment Methods",
       subtitle: "Cards and mobile money",
-      onPress: () => console.log('Payment methods - Coming soon')
+      onPress: () => router.push("/profile/payment-methods")
     },
     {
       icon: Bell,
       title: "Notifications",
       subtitle: "Order updates and offers",
-      onPress: () => console.log('Notifications - Coming soon')
+      onPress: () => router.push("/profile/notifications")
     },
     {
       icon: HelpCircle,
       title: "Help & Support",
       subtitle: "Get help with your orders",
-      onPress: () => console.log('Help - Coming soon')
+      onPress: () => router.push("/profile/help")
     },
     {
       icon: Settings,
       title: "Settings",
       subtitle: "App preferences",
-      onPress: () => console.log('Settings - Coming soon')
+      onPress: () => router.push("/profile/settings")
     },
   ];
 
@@ -116,7 +116,7 @@ export default function ProfileScreen() {
           </View>
           <TouchableOpacity 
             style={styles.editButton}
-            onPress={() => console.log('Edit profile - Coming soon')}
+            onPress={() => router.push("/profile/personal-info")}
           >
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
