@@ -281,7 +281,7 @@ export default function CartScreen() {
           <View style={styles.sectionHeader}>
             <MapPin size={20} color="#FF6B35" />
             <Text style={styles.sectionTitle}>Delivery Address</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => console.log('Change address - Coming soon')}>
               <Text style={styles.changeText}>Change</Text>
             </TouchableOpacity>
           </View>
@@ -292,7 +292,10 @@ export default function CartScreen() {
               <Text style={styles.addressPhone}>{checkoutData.deliveryAddress.phone}</Text>
             </View>
           ) : (
-            <TouchableOpacity style={styles.addAddressButton}>
+            <TouchableOpacity 
+              style={styles.addAddressButton}
+              onPress={() => console.log('Add address - Coming soon')}
+            >
               <Text style={styles.addAddressText}>Add delivery address</Text>
             </TouchableOpacity>
           )}
@@ -303,7 +306,7 @@ export default function CartScreen() {
           <View style={styles.sectionHeader}>
             <CreditCard size={20} color="#FF6B35" />
             <Text style={styles.sectionTitle}>Payment Method</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => console.log('Change payment method - Coming soon')}>
               <Text style={styles.changeText}>Change</Text>
             </TouchableOpacity>
           </View>
@@ -319,7 +322,10 @@ export default function CartScreen() {
               </Text>
             </View>
           ) : (
-            <TouchableOpacity style={styles.addPaymentButton}>
+            <TouchableOpacity 
+              style={styles.addPaymentButton}
+              onPress={() => console.log('Add payment method - Coming soon')}
+            >
               <Text style={styles.addPaymentText}>Add payment method</Text>
             </TouchableOpacity>
           )}

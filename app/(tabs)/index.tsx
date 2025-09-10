@@ -70,7 +70,10 @@ export default function HomeScreen() {
   );
 
   const renderCategoryItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={[styles.categoryCard, { backgroundColor: item.color }]}>
+    <TouchableOpacity 
+      style={[styles.categoryCard, { backgroundColor: item.color }]}
+      onPress={() => console.log('Category selected:', item.name)}
+    >
       <Text style={styles.categoryEmoji}>{item.emoji}</Text>
       <Text style={styles.categoryName}>{item.name}</Text>
     </TouchableOpacity>
@@ -88,7 +91,10 @@ export default function HomeScreen() {
               <Text style={styles.address}>Accra, Ghana</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.filterButton}>
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => console.log('Filter pressed')}
+          >
             <Filter size={20} color="#333" />
           </TouchableOpacity>
         </View>
@@ -136,7 +142,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Popular Restaurants</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => console.log('See all restaurants')}>
               <Text style={styles.seeAll}>See all</Text>
             </TouchableOpacity>
           </View>

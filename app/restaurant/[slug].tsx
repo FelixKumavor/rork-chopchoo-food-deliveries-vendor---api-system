@@ -3,11 +3,9 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Image,
   TouchableOpacity,
   FlatList,
-  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,8 +20,9 @@ import {
   ShoppingBag,
 } from "lucide-react-native";
 import { useVendorBySlug } from "@/hooks/use-vendors";
+import { useCart } from "@/providers/cart-provider";
 
-const { width } = Dimensions.get("window");
+
 
 const mockMenuItems = [
   {
@@ -57,36 +56,63 @@ const mockMenuItems = [
 
 export default function RestaurantScreen() {
   const { slug } = useLocalSearchParams();
-  const [cart, setCart] = useState<{ [key: string]: number }>({});
+  const [localCart, setLocalCart] = useState<{ [key: string]: number }>({});
   const [selectedCategory, setSelectedCategory] = useState("All");
   
   const { data: vendor, isLoading } = useVendorBySlug(slug as string);
+  const { addToCart: addToCartProvider, cart, itemCount } = useCart();
 
   const categories = ["All", "Main Dishes", "Sides", "Drinks", "Desserts"];
 
-  const addToCart = (itemId: string) => {
-    setCart(prev => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + 1,
-    }));
+  const addToCart = async (itemId: string) => {
+    if (!vendor) return;
+    
+    const menuItem = mockMenuItems.find(item => item.id === itemId);
+    if (!menuItem) return;
+    
+    try {
+      // Convert mock menu item to proper format
+      const menuItemForCart = {
+        id: menuItem.id,
+        vendor_id: vendor.id,
+        name: menuItem.name,
+        description: menuItem.description,
+        price: menuItem.price,
+        image: menuItem.image,
+        category: menuItem.category,
+        available: menuItem.available,
+        created_at: new Date().toISOString(),
+      };
+      
+      await addToCartProvider(vendor, menuItemForCart, 1);
+      console.log('✅ Added to cart:', menuItem.name);
+      
+      // Update local cart for UI
+      setLocalCart(prev => ({
+        ...prev,
+        [itemId]: (prev[itemId] || 0) + 1,
+      }));
+    } catch (error) {
+      console.error('❌ Failed to add to cart:', error);
+    }
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart(prev => ({
+    setLocalCart(prev => ({
       ...prev,
       [itemId]: Math.max((prev[itemId] || 0) - 1, 0),
     }));
   };
 
   const getCartTotal = () => {
-    return Object.entries(cart).reduce((total, [itemId, quantity]) => {
+    return Object.entries(localCart).reduce((total, [itemId, quantity]) => {
       const item = mockMenuItems.find(i => i.id === itemId);
       return total + (item?.price || 0) * quantity;
     }, 0);
   };
 
   const getCartItemCount = () => {
-    return Object.values(cart).reduce((total, quantity) => total + quantity, 0);
+    return Object.values(localCart).reduce((total, quantity) => total + quantity, 0);
   };
 
   const renderMenuItem = ({ item }: { item: any }) => (
@@ -98,7 +124,7 @@ export default function RestaurantScreen() {
         <View style={styles.menuItemFooter}>
           <Text style={styles.menuItemPrice}>GH₵{item.price.toFixed(2)}</Text>
           <View style={styles.quantityControls}>
-            {cart[item.id] > 0 && (
+            {localCart[item.id] > 0 && (
               <>
                 <TouchableOpacity
                   style={styles.quantityButton}
@@ -106,7 +132,7 @@ export default function RestaurantScreen() {
                 >
                   <Minus size={16} color="#FF6B35" />
                 </TouchableOpacity>
-                <Text style={styles.quantity}>{cart[item.id]}</Text>
+                <Text style={styles.quantity}>{localCart[item.id]}</Text>
               </>
             )}
             <TouchableOpacity
@@ -229,8 +255,11 @@ export default function RestaurantScreen() {
       />
 
       {/* Cart Button */}
-      {getCartItemCount() > 0 && (
-        <TouchableOpacity style={styles.cartButton}>
+      {(getCartItemCount() > 0 || itemCount > 0) && (
+        <TouchableOpacity 
+          style={styles.cartButton}
+          onPress={() => router.push('/cart')}
+        >
           <LinearGradient
             colors={["#FF6B35", "#FF8E53"]}
             style={styles.cartGradient}
@@ -238,10 +267,10 @@ export default function RestaurantScreen() {
             <View style={styles.cartContent}>
               <View style={styles.cartInfo}>
                 <ShoppingBag size={20} color="white" />
-                <Text style={styles.cartCount}>{getCartItemCount()}</Text>
+                <Text style={styles.cartCount}>{itemCount || getCartItemCount()}</Text>
               </View>
               <Text style={styles.cartText}>View Cart</Text>
-              <Text style={styles.cartTotal}>GH₵{getCartTotal().toFixed(2)}</Text>
+              <Text style={styles.cartTotal}>GH₵{cart?.total?.toFixed(2) || getCartTotal().toFixed(2)}</Text>
             </View>
           </LinearGradient>
         </TouchableOpacity>
