@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "../../../create-context";
 
 const getVendorsSchema = z.object({
   status: z.enum(["pending", "approved", "rejected"]).optional(),
@@ -10,9 +10,9 @@ const getVendorsSchema = z.object({
   offset: z.number().min(0).default(0)
 });
 
-export const getVendorsProcedure = publicProcedure
+export default publicProcedure
   .input(getVendorsSchema)
-  .query(async ({ input }: { input: z.infer<typeof getVendorsSchema> }) => {
+  .query(async ({ input }) => {
     try {
       console.log('🔍 Fetching vendors with filters:', input);
       
@@ -166,5 +166,3 @@ export const getVendorsProcedure = publicProcedure
       throw new Error(`Failed to fetch vendors: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   });
-
-export default getVendorsProcedure;

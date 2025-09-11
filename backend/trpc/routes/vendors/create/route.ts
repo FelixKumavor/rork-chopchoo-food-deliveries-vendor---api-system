@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "../../../create-context";
 
 const createVendorSchema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
@@ -30,9 +30,9 @@ const createVendorSchema = z.object({
   payout_frequency: z.enum(["weekly", "biweekly", "monthly"]).default("weekly")
 });
 
-export const createVendorProcedure = publicProcedure
+export default publicProcedure
   .input(createVendorSchema)
-  .mutation(async ({ input }: { input: z.infer<typeof createVendorSchema> }) => {
+  .mutation(async ({ input }) => {
     try {
       console.log('🏪 Creating vendor:', input.name);
       
@@ -61,5 +61,3 @@ export const createVendorProcedure = publicProcedure
       throw new Error(`Failed to create vendor: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   });
-
-export default createVendorProcedure;

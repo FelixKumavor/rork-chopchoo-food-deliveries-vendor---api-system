@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "../../../create-context";
 
 const getVendorBySlugSchema = z.object({
   slug: z.string().min(1, "Slug is required")
 });
 
-export const getVendorBySlugProcedure = publicProcedure
+export default publicProcedure
   .input(getVendorBySlugSchema)
-  .query(async ({ input }: { input: z.infer<typeof getVendorBySlugSchema> }) => {
+  .query(async ({ input }) => {
     try {
       console.log('🔍 Fetching vendor by slug:', input.slug);
       
@@ -226,5 +226,3 @@ export const getVendorBySlugProcedure = publicProcedure
       throw new Error(`Failed to fetch vendor: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   });
-
-export default getVendorBySlugProcedure;
