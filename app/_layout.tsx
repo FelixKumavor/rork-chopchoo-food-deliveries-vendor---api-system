@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { trpc, trpcClient } from "@/lib/trpc";
+import { trpc, createTRPCReactClient } from "@/lib/trpc";
 import { AuthProvider } from "@/providers/auth-provider";
 import { VendorProvider } from "@/providers/vendor-provider";
 import { CartProvider } from "@/providers/cart-provider";
@@ -108,14 +108,16 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [trpcClient] = React.useState(() => createTRPCReactClient());
+
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
           <AuthProvider>
             <VendorProvider>
               <CartProvider>
@@ -123,8 +125,8 @@ export default function RootLayout() {
               </CartProvider>
             </VendorProvider>
           </AuthProvider>
-        </QueryClientProvider>
-      </trpc.Provider>
+        </trpc.Provider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

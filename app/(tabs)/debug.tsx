@@ -5,13 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RefreshCw, CheckCircle, XCircle, Wifi, Server } from 'lucide-react-native';
 import { trpc } from '@/lib/trpc';
 
 export default function DebugScreen() {
+  const insets = useSafeAreaInsets();
   const [tests, setTests] = useState<{
     [key: string]: { status: 'pending' | 'success' | 'error'; message: string; data?: any }
   }>({});
@@ -25,6 +25,36 @@ export default function DebugScreen() {
   const runConnectivityTests = async () => {
     setIsRunning(true);
     setTests({});
+
+    // Test 0: Network connectivity
+    try {
+      setTests(prev => ({ ...prev, network: { status: 'pending', message: 'Testing network connectivity...' } }));
+      
+      const response = await fetch('https://httpbin.org/get', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      
+      if (response.ok) {
+        setTests(prev => ({ 
+          ...prev, 
+          network: { 
+            status: 'success', 
+            message: 'Network connectivity working' 
+          } 
+        }));
+      } else {
+        throw new Error(`Network test failed: ${response.status}`);
+      }
+    } catch (error: any) {
+      setTests(prev => ({ 
+        ...prev, 
+        network: { 
+          status: 'error', 
+          message: `Network connectivity failed: ${error.message}` 
+        } 
+      }));
+    }
 
     // Test 1: Basic API endpoint
     try {
@@ -49,7 +79,8 @@ export default function DebugScreen() {
           } 
         }));
       } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
     } catch (error: any) {
       setTests(prev => ({ 
@@ -176,7 +207,7 @@ export default function DebugScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
           <Server size={24} color="#FF6B35" />
@@ -206,7 +237,7 @@ export default function DebugScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
