@@ -8,16 +8,30 @@ import webhookHandler from "./webhook-handler";
 // app will be mounted at /api
 const app = new Hono();
 
-// Enable CORS for all routes
-app.use("*", cors());
+// Enable CORS for all routes with proper configuration
+app.use("*", cors({
+  origin: ['http://localhost:8081', 'https://je86yffmqj9hqfu4somgm.rork.com', 'https://localhost:8081'],
+  credentials: true,
+  allowHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
+
+// Add request logging middleware
+app.use('*', async (c, next) => {
+  console.log(`${c.req.method} ${c.req.url}`);
+  console.log('Headers:', c.req.header());
+  await next();
+});
 
 // Mount tRPC router at /trpc
 app.use(
   "/trpc/*",
   trpcServer({
-    endpoint: "/api/trpc",
+    endpoint: "/trpc",
     router: appRouter,
     createContext,
+    onError: ({ error, path }) => {
+      console.error(`tRPC Error on ${path}:`, error);
+    },
   })
 );
 

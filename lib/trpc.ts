@@ -11,14 +11,14 @@ const getBaseUrl = () => {
     return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
 
-  // Fallback to default development URL
+  // For development, use the Rork tunnel URL
   if (typeof window !== 'undefined') {
-    // Web environment - use current origin
+    // Web environment - use current origin with /api path
     return window.location.origin;
   }
   
-  // Default fallback for development
-  return 'http://localhost:8081';
+  // For mobile development, use the tunnel URL
+  return 'https://je86yffmqj9hqfu4somgm.rork.com';
 };
 
 export const trpcClient = trpc.createClient({
@@ -45,6 +45,7 @@ export const trpcClient = trpc.createClient({
             signal: controller.signal,
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
               ...options?.headers,
             },
           });
@@ -52,11 +53,26 @@ export const trpcClient = trpc.createClient({
           clearTimeout(timeoutId);
           
           console.log('tRPC response status:', response.status);
+          console.log('tRPC response headers:', Object.fromEntries(response.headers.entries()));
           
           if (!response.ok) {
             const errorText = await response.text();
             console.error('tRPC response error:', response.statusText, errorText);
+            
+            // Check if we got HTML instead of JSON (common development issue)
+            if (errorText.includes('<!DOCTYPE')) {
+              throw new Error('Server returned HTML instead of JSON. Check if the backend is running correctly.');
+            }
+            
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          // Check content type
+          const contentType = response.headers.get('content-type');
+          if (contentType && !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Unexpected content type:', contentType, 'Response:', text);
+            throw new Error(`Expected JSON response but got ${contentType}`);
           }
           
           return response;
@@ -68,7 +84,7 @@ export const trpcClient = trpc.createClient({
           }
           
           if (error.message?.includes('fetch')) {
-            throw new Error('Network error - please check your connection');
+            throw new Error('Network error - please check your connection and ensure the backend is running');
           }
           
           throw error;

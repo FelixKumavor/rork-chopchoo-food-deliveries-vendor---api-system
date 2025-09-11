@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,9 +12,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Search, MapPin, Star, Clock, Filter } from "lucide-react-native";
+import { Search, MapPin, Star, Clock, Filter, Wifi, WifiOff } from "lucide-react-native";
 import { router } from "expo-router";
 import { useVendors } from "@/hooks/use-vendors";
+import { trpc } from "@/lib/trpc";
 
 const categories = [
   { id: "1", name: "Ghanaian", emoji: "🍛", color: "#FF6B35" },
@@ -27,6 +28,7 @@ const categories = [
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const { data: vendors = [], isLoading } = useVendors();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -34,9 +36,54 @@ export default function HomeScreen() {
   console.log('🏠 HomeScreen render - isLoading:', isLoading, 'vendors count:', vendors.length);
   console.log('🏠 HomeScreen vendors data:', vendors);
   
+  // Test tRPC connectivity
+  const connectivityTest = trpc.example.hi.useQuery({ name: 'ChopChoo' });
+  
+  // Monitor connection status
+  useEffect(() => {
+    if (connectivityTest.data) {
+      console.log('✅ tRPC connection successful:', connectivityTest.data);
+      setConnectionStatus('connected');
+    } else if (connectivityTest.error) {
+      console.error('❌ tRPC connection failed:', connectivityTest.error?.message || connectivityTest.error);
+      setConnectionStatus('error');
+    }
+  }, [connectivityTest.data, connectivityTest.error]);
+  
   // Add error boundary for debugging
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('🏠 HomeScreen mounted successfully');
+    
+    // Test basic API connectivity
+    const testConnectivity = async () => {
+      try {
+        const baseUrl = 'https://je86yffmqj9hqfu4somgm.rork.com';
+        console.log('Testing connectivity to:', baseUrl);
+        
+        const response = await fetch(`${baseUrl}/api/test`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('API test response status:', response.status);
+        const data = await response.json();
+        console.log('API test response data:', data);
+        
+        if (response.ok) {
+          console.log('✅ Basic API connectivity successful');
+        } else {
+          console.error('❌ API test failed:', response.statusText);
+        }
+      } catch (error) {
+        console.error('❌ Connectivity test failed:', error);
+      }
+    };
+    
+    testConnectivity();
+    
     return () => {
       console.log('🏠 HomeScreen unmounted');
     };
@@ -82,6 +129,26 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Connection Status */}
+        <View style={[styles.connectionStatus, 
+          connectionStatus === 'connected' ? styles.connected : 
+          connectionStatus === 'error' ? styles.disconnected : styles.checking
+        ]}>
+          {connectionStatus === 'connected' ? (
+            <>
+              <Wifi size={16} color="#10B981" />
+              <Text style={[styles.connectionText, { color: '#10B981' }]}>Connected</Text>
+            </>
+          ) : connectionStatus === 'error' ? (
+            <>
+              <WifiOff size={16} color="#EF4444" />
+              <Text style={[styles.connectionText, { color: '#EF4444' }]}>Connection Error</Text>
+            </>
+          ) : (
+            <Text style={[styles.connectionText, { color: '#F59E0B' }]}>Checking connection...</Text>
+          )}
+        </View>
+        
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.locationContainer}>
@@ -189,6 +256,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FAFAFA",
+  },
+  connectionStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  connected: {
+    backgroundColor: "#DCFCE7",
+  },
+  disconnected: {
+    backgroundColor: "#FEE2E2",
+  },
+  checking: {
+    backgroundColor: "#FEF3C7",
+  },
+  connectionText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   header: {
     flexDirection: "row",
