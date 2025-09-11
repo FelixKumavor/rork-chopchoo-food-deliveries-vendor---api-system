@@ -26,6 +26,11 @@ import deletePaymentMethodRoute from "./routes/payment-methods/delete/route";
 import getNotificationsRoute from "./routes/notifications/get/route";
 import updateNotificationsRoute from "./routes/notifications/update/route";
 
+// Vendor routes
+import createVendorRoute from "./routes/vendors/create/route";
+import getVendorsRoute from "./routes/vendors/get/route";
+import getVendorBySlugRoute from "./routes/vendors/get-by-slug/route";
+
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
     hi: hiRoute,
@@ -61,6 +66,11 @@ export const appRouter = createTRPCRouter({
   notifications: createTRPCRouter({
     get: getNotificationsRoute,
     update: updateNotificationsRoute,
+  }),
+  vendors: createTRPCRouter({
+    create: createVendorRoute,
+    get: getVendorsRoute,
+    getBySlug: getVendorBySlugRoute,
   }),
 });
 

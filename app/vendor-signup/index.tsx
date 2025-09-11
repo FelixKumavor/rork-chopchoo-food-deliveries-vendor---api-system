@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, ArrowRight, Store, User, MapPin, Clock } from "lucide-react-native";
 import { router } from "expo-router";
-import { useVendorStore } from "@/providers/vendor-provider";
+import { trpc } from '@/lib/trpc';
 
 
 const steps = [
@@ -24,9 +24,11 @@ const steps = [
 ];
 
 export default function VendorSignupScreen() {
-  const { addVendor } = useVendorStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // tRPC mutation for creating vendor
+  const createVendorMutation = trpc.vendors.create.useMutation();
   const [formData, setFormData] = useState({
     restaurantName: "",
     businessType: "",
@@ -206,14 +208,14 @@ export default function VendorSignupScreen() {
         payout_frequency: "weekly" as const,
       };
 
-      // Add vendor to store
+      // Submit vendor to backend
       console.log('📝 Vendor data to submit:', vendorData);
-      const newVendor = await addVendor(vendorData);
-      console.log('✅ Vendor application submitted successfully:', newVendor);
+      const result = await createVendorMutation.mutateAsync(vendorData);
+      console.log('✅ Vendor application submitted successfully:', result);
 
       Alert.alert(
         "Application Submitted!",
-        `Thank you ${formData.ownerName}! Your vendor application for "${formData.restaurantName}" has been submitted for review. We'll contact you at ${formData.email} within 2-3 business days.\n\nApplication ID: ${newVendor.id}`,
+        `Thank you ${formData.ownerName}! Your vendor application for "${formData.restaurantName}" has been submitted for review. We'll contact you at ${formData.email} within 2-3 business days.\n\n${result.message}`,
         [
           {
             text: "OK",

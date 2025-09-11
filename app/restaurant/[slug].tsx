@@ -19,7 +19,7 @@ import {
   Minus,
   ShoppingBag,
 } from "lucide-react-native";
-import { useVendorBySlug } from "@/hooks/use-vendors";
+import { trpc } from '@/lib/trpc';
 import { useCart } from "@/providers/cart-provider";
 
 
@@ -59,7 +59,13 @@ export default function RestaurantScreen() {
   const [localCart, setLocalCart] = useState<{ [key: string]: number }>({});
   const [selectedCategory, setSelectedCategory] = useState("All");
   
-  const { data: vendor, isLoading } = useVendorBySlug(slug as string);
+  // Use tRPC to fetch vendor by slug
+  const { data: vendorData, isLoading } = trpc.vendors.getBySlug.useQuery(
+    { slug: slug as string },
+    { enabled: !!slug }
+  );
+  
+  const vendor = vendorData?.vendor;
   const { addToCart: addToCartProvider, cart, itemCount } = useCart();
 
   const categories = ["All", "Main Dishes", "Sides", "Drinks", "Desserts"];
@@ -67,7 +73,9 @@ export default function RestaurantScreen() {
   const addToCart = async (itemId: string) => {
     if (!vendor) return;
     
-    const menuItem = mockMenuItems.find(item => item.id === itemId);
+    // Use menu items from vendor data if available, otherwise use mock data
+    const menuItems = vendor?.menu_items || mockMenuItems;
+    const menuItem = menuItems.find((item: any) => item.id === itemId);
     if (!menuItem) return;
     
     try {
@@ -247,7 +255,7 @@ export default function RestaurantScreen() {
 
       {/* Menu Items */}
       <FlatList
-        data={mockMenuItems}
+        data={vendor?.menu_items || mockMenuItems}
         renderItem={renderMenuItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.menuList}

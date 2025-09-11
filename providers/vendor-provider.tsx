@@ -1,6 +1,7 @@
 import createContextHook from "@nkzw/create-context-hook";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { trpc } from '@/lib/trpc';
 
 interface Vendor {
   id: string;
@@ -21,10 +22,28 @@ interface Vendor {
 export const [VendorProvider, useVendorStore] = createContextHook(() => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Use tRPC to fetch vendors from backend
+  const vendorsQuery = trpc.vendors.get.useQuery(
+    { status: 'approved', is_active: true },
+    { 
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
 
   useEffect(() => {
-    loadVendors();
-  }, []);
+    if (vendorsQuery.data?.vendors) {
+      console.log('📦 Setting vendors from backend:', vendorsQuery.data.vendors.length);
+      setVendors(vendorsQuery.data.vendors);
+      setIsLoading(false);
+    } else if (!vendorsQuery.isLoading && !vendorsQuery.data) {
+      // Fallback to local storage if backend fails
+      loadVendors();
+    } else {
+      setIsLoading(vendorsQuery.isLoading);
+    }
+  }, [vendorsQuery.data, vendorsQuery.isLoading]);
 
   const loadVendors = async () => {
     try {
@@ -120,6 +139,8 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
 
   const addVendor = useCallback(async (vendorData: Omit<Vendor, "id" | "created_at">) => {
     try {
+      // This is now handled by the backend via tRPC
+      // We'll keep this for backward compatibility but it won't be used
       const newVendor: Vendor = {
         ...vendorData,
         id: Date.now().toString(),
@@ -151,7 +172,9 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
     }
   }, [vendors]);
 
-  const refreshVendors = useCallback(() => loadVendors(), []);
+  const refreshVendors = useCallback(() => {
+    vendorsQuery.refetch();
+  }, [vendorsQuery]);
 
   return useMemo(() => ({
     vendors,
