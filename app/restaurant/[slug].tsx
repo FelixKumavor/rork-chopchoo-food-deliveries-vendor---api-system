@@ -60,12 +60,143 @@ export default function RestaurantScreen() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   
   // Use tRPC to fetch vendor by slug
-  const { data: vendorData, isLoading } = trpc.vendors.getBySlug.useQuery(
+  const { data: vendorData, isLoading, error } = trpc.vendors.getBySlug.useQuery(
     { slug: slug as string },
-    { enabled: !!slug }
+    { 
+      enabled: !!slug,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
   );
   
-  const vendor = vendorData?.vendor;
+  // Fallback mock vendors for when backend is not available
+  const mockVendors = {
+    "mamas-kitchen": {
+      id: "vendor_1",
+      name: "Mama's Kitchen",
+      slug: "mamas-kitchen",
+      logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
+      cuisine_type: "Ghanaian",
+      address: "123 Oxford Street, Osu",
+      city: "Accra",
+      phone: "+233 20 123 4567",
+      email: "info@mamaskitchen.com",
+      rating: 4.5,
+      is_active: true,
+      status: "approved" as const,
+      delivery_radius: 5,
+      created_at: "2024-01-01T00:00:00Z",
+      menu_items: [
+        {
+          id: "1",
+          name: "Jollof Rice with Chicken",
+          description: "Aromatic jollof rice served with grilled chicken and plantain",
+          price: 25.50,
+          image: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=300&h=200&fit=crop",
+          category: "Main Dishes",
+          available: true,
+        },
+        {
+          id: "2",
+          name: "Kelewele",
+          description: "Spiced fried plantain cubes with ginger and pepper",
+          price: 8.00,
+          image: "https://images.unsplash.com/photo-1587334274328-64186a80aeee?w=300&h=200&fit=crop",
+          category: "Sides",
+          available: true,
+        },
+        {
+          id: "3",
+          name: "Banku with Tilapia",
+          description: "Traditional banku served with grilled tilapia and pepper sauce",
+          price: 32.00,
+          image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop",
+          category: "Main Dishes",
+          available: true,
+        },
+      ]
+    },
+    "pizza-palace": {
+      id: "vendor_2",
+      name: "Pizza Palace",
+      slug: "pizza-palace",
+      logo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&h=300&fit=crop&crop=center",
+      cuisine_type: "Italian",
+      address: "456 Ring Road, East Legon",
+      city: "Accra",
+      phone: "+233 20 234 5678",
+      email: "orders@pizzapalace.com",
+      rating: 4.2,
+      is_active: true,
+      status: "approved" as const,
+      delivery_radius: 8,
+      created_at: "2024-01-02T00:00:00Z",
+      menu_items: [
+        {
+          id: "4",
+          name: "Margherita Pizza",
+          description: "Classic pizza with tomato sauce, mozzarella, and fresh basil",
+          price: 35.00,
+          image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=300&h=200&fit=crop",
+          category: "Pizza",
+          available: true,
+        },
+        {
+          id: "5",
+          name: "Pepperoni Pizza",
+          description: "Delicious pizza topped with pepperoni and mozzarella cheese",
+          price: 40.00,
+          image: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=300&h=200&fit=crop",
+          category: "Pizza",
+          available: true,
+        },
+      ]
+    },
+    "burger-spot": {
+      id: "vendor_3",
+      name: "Burger Spot",
+      slug: "burger-spot",
+      logo: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=300&h=300&fit=crop&crop=center",
+      cuisine_type: "Fast Food",
+      address: "789 Spintex Road, Tema",
+      city: "Tema",
+      phone: "+233 20 345 6789",
+      email: "hello@burgerspot.com",
+      rating: 4.0,
+      is_active: true,
+      status: "approved" as const,
+      delivery_radius: 6,
+      created_at: "2024-01-03T00:00:00Z",
+      menu_items: [
+        {
+          id: "6",
+          name: "Classic Burger",
+          description: "Juicy beef patty with lettuce, tomato, and our special sauce",
+          price: 20.00,
+          image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&h=200&fit=crop",
+          category: "Burgers",
+          available: true,
+        },
+        {
+          id: "7",
+          name: "Chicken Burger",
+          description: "Crispy chicken breast with mayo and fresh vegetables",
+          price: 18.00,
+          image: "https://images.unsplash.com/photo-1606755962773-d324e2d53014?w=300&h=200&fit=crop",
+          category: "Burgers",
+          available: true,
+        },
+      ]
+    }
+  };
+  
+  // Get vendor from backend or fallback to mock data
+  const vendor = vendorData?.vendor || mockVendors[slug as keyof typeof mockVendors];
+  
+  console.log('🍽️ Restaurant page - slug:', slug);
+  console.log('🍽️ Backend vendor data:', vendorData);
+  console.log('🍽️ Final vendor:', vendor);
+  console.log('🍽️ Error:', error);
   const { addToCart: addToCartProvider, cart, itemCount } = useCart();
 
   const categories = ["All", "Main Dishes", "Sides", "Drinks", "Desserts"];
@@ -189,6 +320,7 @@ export default function RestaurantScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Restaurant not found</Text>
+          <Text style={styles.errorSubtext}>The restaurant &quot;{slug}&quot; could not be found.</Text>
           <TouchableOpacity
             style={styles.backToHomeButton}
             onPress={() => router.push("/(tabs)")}
@@ -498,8 +630,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
+    fontWeight: "bold",
     color: "#333",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: "#666",
     marginBottom: 20,
+    textAlign: "center",
   },
   backToHomeButton: {
     backgroundColor: "#FF6B35",
