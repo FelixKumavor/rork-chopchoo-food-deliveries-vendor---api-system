@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import {
   Trash2,
   CheckCircle,
 } from 'lucide-react-native';
+import { useAuth } from '@/providers/auth-provider';
+import { trpc } from '@/lib/trpc';
 
 interface PaymentMethod {
   id: string;
@@ -23,26 +25,48 @@ interface PaymentMethod {
   name: string;
   details: string;
   isDefault: boolean;
+  last_four?: string;
+  brand?: string;
+  provider?: string;
+  phone_number?: string;
 }
 
 export default function PaymentMethodsScreen() {
   const insets = useSafeAreaInsets();
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    {
-      id: '1',
-      type: 'card',
-      name: 'Visa Card',
-      details: '**** **** **** 1234',
-      isDefault: true,
+  const { user } = useAuth();
+
+  // Get payment methods data
+  const paymentMethodsQuery = trpc.paymentMethods.get.useQuery(
+    { userId: user?.id || "1" },
+    { enabled: !!user?.id }
+  );
+
+  // Create payment method mutation
+  const createPaymentMethodMutation = trpc.paymentMethods.create.useMutation({
+    onSuccess: (data) => {
+      Alert.alert("Success", data.message);
+      paymentMethodsQuery.refetch();
     },
-    {
-      id: '2',
-      type: 'mobile_money',
-      name: 'MTN Mobile Money',
-      details: '0207477013',
-      isDefault: false,
+    onError: (error) => {
+      Alert.alert("Error", error.message);
     },
-  ]);
+  });
+
+  // Delete payment method mutation
+  const deletePaymentMethodMutation = trpc.paymentMethods.delete.useMutation({
+    onSuccess: (data) => {
+      Alert.alert("Success", data.message);
+      paymentMethodsQuery.refetch();
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message);
+    },
+  });
+
+  const paymentMethods: PaymentMethod[] = (paymentMethodsQuery.data?.payment_methods || []).map(method => ({
+    ...method,
+    type: method.type as 'card' | 'mobile_money'
+  }));
 
   const handleAddPaymentMethod = () => {
     Alert.alert(
@@ -57,34 +81,41 @@ export default function PaymentMethodsScreen() {
   };
 
   const handleAddCard = () => {
-    // Simulate adding a card
-    const newCard: PaymentMethod = {
-      id: Date.now().toString(),
+    if (!user?.id) return;
+    
+    // Mock card data - in real app, use Paystack card tokenization
+    const mockCardNumber = '4111111111111234'; // Test Visa card
+    
+    createPaymentMethodMutation.mutate({
+      userId: user.id,
       type: 'card',
-      name: 'New Card',
-      details: '**** **** **** ' + Math.floor(1000 + Math.random() * 9000),
+      card_number: mockCardNumber,
+      exp_month: 12,
+      exp_year: 2025,
+      cvv: '123',
       isDefault: paymentMethods.length === 0,
-    };
-    setPaymentMethods(prev => [...prev, newCard]);
-    Alert.alert('Success', 'Card added successfully!');
+    });
   };
 
   const handleAddMobileMoney = () => {
-    // Simulate adding mobile money
-    const providers = ['MTN', 'Vodafone', 'AirtelTigo'];
+    if (!user?.id) return;
+    
+    const providers: ('mtn' | 'vodafone' | 'airtel')[] = ['mtn', 'vodafone', 'airtel'];
     const randomProvider = providers[Math.floor(Math.random() * providers.length)];
-    const newMobileMoney: PaymentMethod = {
-      id: Date.now().toString(),
+    const mockPhoneNumber = '0' + Math.floor(200000000 + Math.random() * 99999999).toString();
+    
+    createPaymentMethodMutation.mutate({
+      userId: user.id,
       type: 'mobile_money',
-      name: `${randomProvider} Mobile Money`,
-      details: '0' + Math.floor(200000000 + Math.random() * 99999999),
+      provider: randomProvider,
+      phone_number: mockPhoneNumber,
       isDefault: paymentMethods.length === 0,
-    };
-    setPaymentMethods(prev => [...prev, newMobileMoney]);
-    Alert.alert('Success', 'Mobile Money account added successfully!');
+    });
   };
 
   const handleDeleteMethod = (id: string) => {
+    if (!user?.id) return;
+    
     Alert.alert(
       'Delete Payment Method',
       'Are you sure you want to remove this payment method?',
@@ -94,7 +125,10 @@ export default function PaymentMethodsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            setPaymentMethods(prev => prev.filter(method => method.id !== id));
+            deletePaymentMethodMutation.mutate({
+              paymentMethodId: id,
+              userId: user.id,
+            });
           },
         },
       ]
@@ -102,12 +136,8 @@ export default function PaymentMethodsScreen() {
   };
 
   const handleSetDefault = (id: string) => {
-    setPaymentMethods(prev =>
-      prev.map(method => ({
-        ...method,
-        isDefault: method.id === id,
-      }))
-    );
+    // TODO: Implement set default payment method API
+    Alert.alert('Set Default', 'Setting default payment method will be implemented');
   };
 
   const renderPaymentMethod = (method: PaymentMethod) => (
@@ -162,7 +192,11 @@ export default function PaymentMethodsScreen() {
         <View style={styles.content}>
           <Text style={styles.sectionTitle}>Your Payment Methods</Text>
           
-          {paymentMethods.length > 0 ? (
+          {paymentMethodsQuery.isLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading payment methods...</Text>
+            </View>
+          ) : paymentMethods.length > 0 ? (
             <View style={styles.methodsList}>
               {paymentMethods.map(renderPaymentMethod)}
             </View>
@@ -177,11 +211,14 @@ export default function PaymentMethodsScreen() {
           )}
 
           <TouchableOpacity
-            style={styles.addButton}
+            style={[styles.addButton, createPaymentMethodMutation.isPending && styles.addButtonDisabled]}
             onPress={handleAddPaymentMethod}
+            disabled={createPaymentMethodMutation.isPending}
           >
             <Plus size={24} color="white" />
-            <Text style={styles.addButtonText}>Add Payment Method</Text>
+            <Text style={styles.addButtonText}>
+              {createPaymentMethodMutation.isPending ? 'Adding...' : 'Add Payment Method'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.infoCard}>
@@ -327,5 +364,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#0369A1',
     lineHeight: 20,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  addButtonDisabled: {
+    backgroundColor: '#C7C7CC',
   },
 });

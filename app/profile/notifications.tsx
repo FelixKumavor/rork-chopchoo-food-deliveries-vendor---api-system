@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Switch,
+  Alert,
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,8 @@ import {
   Star,
   Gift,
 } from 'lucide-react-native';
+import { useAuth } from '@/providers/auth-provider';
+import { trpc } from '@/lib/trpc';
 
 interface NotificationSetting {
   id: string;
@@ -30,6 +33,8 @@ interface NotificationSetting {
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  
   const [notifications, setNotifications] = useState<NotificationSetting[]>([
     {
       id: '1',
@@ -83,14 +88,93 @@ export default function NotificationsScreen() {
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
+  // Get notification settings
+  const notificationsQuery = trpc.notifications.get.useQuery(
+    { userId: user?.id || "1" },
+    { enabled: !!user?.id }
+  );
+
+  // Update notification settings mutation
+  const updateNotificationsMutation = trpc.notifications.update.useMutation({
+    onSuccess: () => {
+      console.log('Notification settings updated successfully');
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message);
+    },
+  });
+
+  useEffect(() => {
+    if (notificationsQuery.data?.settings) {
+      const settings = notificationsQuery.data.settings;
+      setSoundEnabled(settings.sound_enabled);
+      
+      // Update notification states based on backend data
+      setNotifications(prev => prev.map(notification => {
+        if (notification.type === 'push') {
+          switch (notification.id) {
+            case '1':
+              return { ...notification, enabled: settings.push_notifications.order_updates };
+            case '2':
+              return { ...notification, enabled: settings.push_notifications.delivery_updates };
+            case '3':
+              return { ...notification, enabled: settings.push_notifications.promotions };
+            case '4':
+              return { ...notification, enabled: settings.push_notifications.new_restaurants };
+            default:
+              return notification;
+          }
+        } else if (notification.type === 'email') {
+          return { ...notification, enabled: settings.email_notifications };
+        } else if (notification.type === 'sms') {
+          return { ...notification, enabled: settings.sms_notifications };
+        }
+        return notification;
+      }));
+    }
+  }, [notificationsQuery.data]);
+
   const toggleNotification = (id: string) => {
+    if (!user?.id) return;
+    
+    const notification = notifications.find(n => n.id === id);
+    if (!notification) return;
+    
+    const newEnabled = !notification.enabled;
+    
+    // Update local state immediately
     setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id
-          ? { ...notification, enabled: !notification.enabled }
-          : notification
+      prev.map(n =>
+        n.id === id ? { ...n, enabled: newEnabled } : n
       )
     );
+    
+    // Update backend
+    const updateData: any = { userId: user.id };
+    
+    if (notification.type === 'push') {
+      updateData.push_notifications = {};
+      switch (id) {
+        case '1':
+          updateData.push_notifications.order_updates = newEnabled;
+          break;
+        case '2':
+          updateData.push_notifications.delivery_updates = newEnabled;
+          break;
+        case '3':
+          updateData.push_notifications.promotions = newEnabled;
+          break;
+        case '4':
+          updateData.push_notifications.new_restaurants = newEnabled;
+          break;
+      }
+    } else if (notification.type === 'email') {
+      updateData.email_notifications = newEnabled;
+    } else if (notification.type === 'sms') {
+      updateData.sms_notifications = newEnabled;
+    }
+    
+    updateNotificationsMutation.mutate(updateData);
   };
 
   const renderNotificationItem = (item: NotificationSetting) => (
@@ -141,7 +225,15 @@ export default function NotificationsScreen() {
               </View>
               <Switch
                 value={soundEnabled}
-                onValueChange={setSoundEnabled}
+                onValueChange={(value) => {
+                  setSoundEnabled(value);
+                  if (user?.id) {
+                    updateNotificationsMutation.mutate({
+                      userId: user.id,
+                      sound_enabled: value,
+                    });
+                  }
+                }}
                 trackColor={{ false: '#E5E5EA', true: '#FF6B35' }}
                 thumbColor={soundEnabled ? '#FFFFFF' : '#FFFFFF'}
               />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
+  Alert,
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,6 +19,8 @@ import {
   MoreHorizontal,
   Star,
 } from "lucide-react-native";
+import { useAuth } from "@/providers/auth-provider";
+import { trpc } from "@/lib/trpc";
 
 interface Address {
   id: string;
@@ -30,53 +33,86 @@ interface Address {
     latitude: number;
     longitude: number;
   };
+  phone?: string;
+  instructions?: string;
 }
 
 export default function AddressesScreen() {
   const insets = useSafeAreaInsets();
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: "1",
-      name: "Home",
-      address: "123 Main Street, East Legon",
-      city: "Accra",
-      type: "home",
-      isDefault: true,
-      coordinates: { latitude: 5.6037, longitude: -0.1870 },
+  const { user } = useAuth();
+
+  // Get addresses data
+  const addressesQuery = trpc.addresses.get.useQuery(
+    { userId: user?.id || "1" },
+    { enabled: !!user?.id }
+  );
+
+  // Delete address mutation
+  const deleteAddressMutation = trpc.addresses.delete.useMutation({
+    onSuccess: () => {
+      Alert.alert("Success", "Address deleted successfully");
+      addressesQuery.refetch();
     },
-    {
-      id: "2",
-      name: "Office",
-      address: "456 Business District, Airport City",
-      city: "Accra",
-      type: "work",
-      isDefault: false,
-      coordinates: { latitude: 5.6037, longitude: -0.1870 },
+    onError: (error) => {
+      Alert.alert("Error", error.message);
     },
-  ]);
+  });
+
+  // Update address mutation (for setting default)
+  const updateAddressMutation = trpc.addresses.update.useMutation({
+    onSuccess: () => {
+      addressesQuery.refetch();
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message);
+    },
+  });
+
+  const addresses: Address[] = (addressesQuery.data?.addresses || []).map(addr => ({
+    ...addr,
+    type: addr.type as "home" | "work" | "other"
+  }));
 
   const handleAddAddress = () => {
-    // TODO: Navigate to add address screen
-    console.log("Add new address");
+    // TODO: Navigate to add address screen with map picker
+    Alert.alert("Add Address", "Address creation with map picker will be implemented");
   };
 
   const handleEditAddress = (addressId: string) => {
     // TODO: Navigate to edit address screen
-    console.log("Edit address:", addressId);
+    Alert.alert("Edit Address", "Address editing will be implemented");
   };
 
   const setDefaultAddress = (addressId: string) => {
-    setAddresses(prev => 
-      prev.map(addr => ({
-        ...addr,
-        isDefault: addr.id === addressId,
-      }))
-    );
+    if (!user?.id) return;
+    
+    updateAddressMutation.mutate({
+      addressId,
+      userId: user.id,
+      isDefault: true,
+    });
   };
 
-  const deleteAddress = (addressId: string) => {
-    setAddresses(prev => prev.filter(addr => addr.id !== addressId));
-    console.log("Delete address:", addressId);
+  const handleDeleteAddress = (addressId: string) => {
+    if (!user?.id) return;
+    
+    Alert.alert(
+      "Delete Address",
+      "Are you sure you want to delete this address?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteAddressMutation.mutate({
+              addressId,
+              userId: user.id,
+            });
+          },
+        },
+      ]
+    );
   };
 
   const getAddressIcon = (type: string) => {
@@ -170,15 +206,29 @@ export default function AddressesScreen() {
         </TouchableOpacity>
 
         {/* Addresses List */}
-        <View style={styles.addressesList}>
-          <FlatList
-            data={addresses}
-            renderItem={renderAddress}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
-        </View>
+        {addressesQuery.isLoading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading addresses...</Text>
+          </View>
+        ) : addresses.length > 0 ? (
+          <View style={styles.addressesList}>
+            <FlatList
+              data={addresses}
+              renderItem={renderAddress}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            />
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <MapPin size={48} color="#C7C7CC" />
+            <Text style={styles.emptyTitle}>No Addresses</Text>
+            <Text style={styles.emptySubtitle}>
+              Add your first delivery address to get started
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -313,5 +363,31 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#F2F2F7",
     marginHorizontal: 16,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: 48,
+    marginHorizontal: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#8E8E93",
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 48,
+    marginHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    textAlign: "center",
   },
 });

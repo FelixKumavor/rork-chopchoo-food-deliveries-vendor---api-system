@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   TextInput,
   Image,
   Platform,
+  Alert,
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Camera, User } from "lucide-react-native";
 import { useAuth } from "@/providers/auth-provider";
+import { trpc } from "@/lib/trpc";
 
 export default function PersonalInfoScreen() {
   const insets = useSafeAreaInsets();
@@ -24,21 +26,51 @@ export default function PersonalInfoScreen() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSave = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: Implement API call to update user profile
-      console.log("Updating profile:", formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+  // Get profile data
+  const profileQuery = trpc.profile.get.useQuery(
+    { userId: user?.id || "1" },
+    { enabled: !!user?.id }
+  );
+
+  // Update profile mutation
+  const updateProfileMutation = trpc.profile.update.useMutation({
+    onSuccess: (data) => {
+      Alert.alert("Success", data.message);
       router.back();
-    } catch (error) {
-      console.error("Error updating profile:", error);
-    } finally {
-      setIsLoading(false);
+    },
+    onError: (error) => {
+      Alert.alert("Error", error.message);
+    },
+  });
+
+  useEffect(() => {
+    if (profileQuery.data?.profile) {
+      const profile = profileQuery.data.profile;
+      setFormData({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+      });
     }
+  }, [profileQuery.data]);
+
+  const handleSave = async () => {
+    if (!user?.id) {
+      Alert.alert("Error", "User not found");
+      return;
+    }
+
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    updateProfileMutation.mutate({
+      userId: user.id,
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+    });
   };
 
   const handleImagePicker = () => {
@@ -137,12 +169,12 @@ export default function PersonalInfoScreen() {
       {/* Save Button */}
       <View style={[styles.bottomContainer, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity
-          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+          style={[styles.saveButton, (updateProfileMutation.isPending || profileQuery.isLoading) && styles.saveButtonDisabled]}
           onPress={handleSave}
-          disabled={isLoading}
+          disabled={updateProfileMutation.isPending || profileQuery.isLoading}
         >
           <Text style={styles.saveButtonText}>
-            {isLoading ? "Saving..." : "Save Changes"}
+            {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
           </Text>
         </TouchableOpacity>
       </View>
