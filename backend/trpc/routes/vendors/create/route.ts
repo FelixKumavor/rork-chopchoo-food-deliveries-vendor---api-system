@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../../../create-context";
+import { publicProcedure } from "../../create-context";
 
 const createVendorSchema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
@@ -30,7 +30,7 @@ const createVendorSchema = z.object({
   payout_frequency: z.enum(["weekly", "biweekly", "monthly"]).default("weekly")
 });
 
-export default publicProcedure
+export const createVendorProcedure = publicProcedure
   .input(createVendorSchema)
   .mutation(async ({ input }) => {
     try {

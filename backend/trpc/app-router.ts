@@ -27,9 +27,9 @@ import getNotificationsRoute from "./routes/notifications/get/route";
 import updateNotificationsRoute from "./routes/notifications/update/route";
 
 // Vendor routes
-import createVendorRoute from "./routes/vendors/create/route";
-import getVendorsRoute from "./routes/vendors/get/route";
-import getVendorBySlugRoute from "./routes/vendors/get-by-slug/route";
+import { createVendorProcedure } from "./routes/vendors/create/route";
+import { getVendorsProcedure } from "./routes/vendors/get/route";
+import { getVendorBySlugProcedure } from "./routes/vendors/get-by-slug/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -68,9 +68,9 @@ export const appRouter = createTRPCRouter({
     update: updateNotificationsRoute,
   }),
   vendors: createTRPCRouter({
-    create: createVendorRoute,
-    get: getVendorsRoute,
-    getBySlug: getVendorBySlugRoute,
+    create: createVendorProcedure,
+    get: getVendorsProcedure,
+    getBySlug: getVendorBySlugProcedure,
   }),
 });
 

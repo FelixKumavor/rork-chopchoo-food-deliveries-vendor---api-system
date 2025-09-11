@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { publicProcedure } from "../../../create-context";
+import { publicProcedure } from "../../create-context";
 
 const getVendorBySlugSchema = z.object({
   slug: z.string().min(1, "Slug is required")
 });
 
-export default publicProcedure
+export const getVendorBySlugProcedure = publicProcedure
   .input(getVendorBySlugSchema)
   .query(async ({ input }) => {
     try {
