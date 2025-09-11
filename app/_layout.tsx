@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
-import { httpLink } from "@trpc/client";
+import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 import { AuthProvider } from "@/providers/auth-provider";
 import { VendorProvider } from "@/providers/vendor-provider";
@@ -137,7 +137,7 @@ export default function RootLayout() {
       
       return trpc.createClient({
         links: [
-          httpLink({
+          httpBatchLink({
             url: `${getBaseUrl()}/api/trpc`,
             transformer: superjson,
             headers: () => ({

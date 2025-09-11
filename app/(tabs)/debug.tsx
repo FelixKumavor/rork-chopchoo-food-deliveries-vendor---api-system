@@ -90,9 +90,88 @@ export default function DebugScreen() {
       }));
     }
 
-    // Test 2: tRPC endpoint using React Query
+    // Test 1.5: Debug endpoint
     try {
-      setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Testing tRPC...' } }));
+      setTests(prev => ({ ...prev, debugApi: { status: 'pending', message: 'Testing debug endpoint...' } }));
+      
+      const response = await fetch('https://je86yffmqj9hqfu4somgm.rork.com/api/debug', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTests(prev => ({ 
+          ...prev, 
+          debugApi: { 
+            status: 'success', 
+            message: '✅ Debug endpoint working', 
+            data 
+          } 
+        }));
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+      }
+    } catch (error: any) {
+      console.error('❌ Debug API failed:', error.message);
+      setTests(prev => ({ 
+        ...prev, 
+        debugApi: { 
+          status: 'error', 
+          message: `❌ Debug API failed: ${error.message}` 
+        } 
+      }));
+    }
+
+    // Test 2: Direct tRPC endpoint test
+    try {
+      setTests(prev => ({ ...prev, trpcDirect: { status: 'pending', message: 'Testing tRPC endpoint directly...' } }));
+      
+      const response = await fetch('https://je86yffmqj9hqfu4somgm.rork.com/api/trpc/example.hi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          "0": {
+            "json": { "name": "Direct Test" }
+          }
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTests(prev => ({ 
+          ...prev, 
+          trpcDirect: { 
+            status: 'success', 
+            message: '✅ Direct tRPC endpoint working!', 
+            data 
+          } 
+        }));
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+      }
+    } catch (error: any) {
+      console.error('❌ Direct tRPC failed:', error.message);
+      setTests(prev => ({ 
+        ...prev, 
+        trpcDirect: { 
+          status: 'error', 
+          message: `❌ Direct tRPC failed: ${error.message}` 
+        } 
+      }));
+    }
+
+    // Test 3: tRPC client test
+    try {
+      setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Testing tRPC client...' } }));
       
       // Use tRPC client directly
       const { trpcClient } = await import('@/lib/trpc');
@@ -102,12 +181,12 @@ export default function DebugScreen() {
         ...prev, 
         trpc: { 
           status: 'success', 
-          message: '✅ tRPC connection working!', 
+          message: '✅ tRPC client working!', 
           data 
         } 
       }));
     } catch (error: any) {
-      console.error('❌ tRPC connection failed:', error.message);
+      console.error('❌ tRPC client failed:', error.message);
       
       // Try a simpler test without parameters
       try {
@@ -120,7 +199,7 @@ export default function DebugScreen() {
           ...prev, 
           trpc: { 
             status: 'success', 
-            message: '✅ tRPC connection working (retry)!', 
+            message: '✅ tRPC client working (retry)!', 
             data 
           } 
         }));
@@ -130,13 +209,13 @@ export default function DebugScreen() {
           ...prev, 
           trpc: { 
             status: 'error', 
-            message: `❌ tRPC connection failed: ${error.message}. Retry: ${retryError.message}` 
+            message: `❌ tRPC client failed: ${error.message}. Retry: ${retryError.message}` 
           } 
         }));
       }
     }
 
-    // Test 3: Vendor endpoints
+    // Test 4: Vendor endpoints
     try {
       setTests(prev => ({ ...prev, vendors: { status: 'pending', message: 'Testing vendor endpoints...' } }));
       
@@ -162,6 +241,32 @@ export default function DebugScreen() {
         vendors: { 
           status: 'error', 
           message: `❌ Vendor endpoints failed: ${error.message}` 
+        } 
+      }));
+    }
+
+    // Test 5: Vendor by slug test
+    try {
+      setTests(prev => ({ ...prev, vendorBySlug: { status: 'pending', message: 'Testing vendor by slug...' } }));
+      
+      const { trpcClient } = await import('@/lib/trpc');
+      const data = await trpcClient.vendors.getBySlug.query({ slug: 'mamas-kitchen' });
+      
+      setTests(prev => ({ 
+        ...prev, 
+        vendorBySlug: { 
+          status: 'success', 
+          message: `✅ Found vendor: ${data.vendor.name}`, 
+          data 
+        } 
+      }));
+    } catch (error: any) {
+      console.error('❌ Vendor by slug failed:', error.message);
+      setTests(prev => ({ 
+        ...prev, 
+        vendorBySlug: { 
+          status: 'error', 
+          message: `❌ Vendor by slug failed: ${error.message}` 
         } 
       }));
     }
