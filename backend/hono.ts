@@ -26,7 +26,21 @@ app.route("/webhook", webhookHandler);
 
 // Simple health check endpoint
 app.get("/", (c) => {
-  return c.json({ status: "ok", message: "API is running" });
+  return c.json({ 
+    status: "ok", 
+    message: "ChopChoo API is running",
+    timestamp: new Date().toISOString(),
+    version: "1.0.0"
+  });
+});
+
+// Test endpoint for connectivity
+app.get("/test", (c) => {
+  return c.json({ 
+    status: "success", 
+    message: "Test endpoint working",
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Debug endpoint to test tRPC
@@ -37,8 +51,12 @@ app.get("/debug", (c) => {
     timestamp: new Date().toISOString(),
     routes: {
       trpc: "/api/trpc",
-      webhook: "/api/webhook"
-    }
+      webhook: "/api/webhook",
+      test: "/api/test",
+      health: "/api"
+    },
+    cors: "enabled",
+    environment: process.env.NODE_ENV || "development"
   });
 });
 

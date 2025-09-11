@@ -13,7 +13,7 @@ const getBaseUrl = () => {
 
   // Fallback to default development URL
   if (typeof window !== 'undefined') {
-    // Web environment
+    // Web environment - use current origin
     return window.location.origin;
   }
   
@@ -26,17 +26,51 @@ export const trpcClient = trpc.createClient({
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
+      headers: () => {
+        return {
+          'Content-Type': 'application/json',
+        };
+      },
       fetch: async (url, options) => {
         console.log('tRPC request:', url, options?.method || 'GET');
+        console.log('Base URL:', getBaseUrl());
+        
         try {
-          const response = await fetch(url, options);
+          // Add timeout to prevent hanging requests
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+          
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              ...options?.headers,
+            },
+          });
+          
+          clearTimeout(timeoutId);
+          
           console.log('tRPC response status:', response.status);
+          
           if (!response.ok) {
-            console.error('tRPC response error:', response.statusText);
+            const errorText = await response.text();
+            console.error('tRPC response error:', response.statusText, errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
+          
           return response;
-        } catch (error) {
+        } catch (error: any) {
           console.error('tRPC fetch error:', error);
+          
+          if (error.name === 'AbortError') {
+            throw new Error('Request timeout - please check your connection');
+          }
+          
+          if (error.message?.includes('fetch')) {
+            throw new Error('Network error - please check your connection');
+          }
+          
           throw error;
         }
       },
