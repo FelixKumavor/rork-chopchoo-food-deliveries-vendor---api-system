@@ -3,9 +3,9 @@ import { publicProcedure } from "../../../create-context";
 
 export default publicProcedure
   .input(z.object({ name: z.string() }))
-  .mutation(({ input }: { input: { name: string } }) => {
+  .query(({ input }: { input: { name: string } }) => {
     return {
-      hello: input.name,
+      hello: `Hello ${input.name}!`,
       date: new Date(),
     };
   });

@@ -29,4 +29,17 @@ app.get("/", (c) => {
   return c.json({ status: "ok", message: "API is running" });
 });
 
+// Debug endpoint to test tRPC
+app.get("/debug", (c) => {
+  return c.json({ 
+    status: "ok", 
+    message: "tRPC server is running",
+    timestamp: new Date().toISOString(),
+    routes: {
+      trpc: "/api/trpc",
+      webhook: "/api/webhook"
+    }
+  });
+});
+
 export default app;
