@@ -8,17 +8,21 @@ export const trpc = createTRPCReact<AppRouter>();
 const getBaseUrl = () => {
   // Check for environment variable first
   if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
+    console.log('🌍 Using env base URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
     return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
 
   // For development, use the Rork tunnel URL
   if (typeof window !== 'undefined') {
     // Web environment - use current origin with /api path
+    console.log('🌍 Using window origin:', window.location.origin);
     return window.location.origin;
   }
   
   // For mobile development, use the tunnel URL
-  return 'https://je86yffmqj9hqfu4somgm.rork.com';
+  const tunnelUrl = 'https://je86yffmqj9hqfu4somgm.rork.com';
+  console.log('🌍 Using tunnel URL:', tunnelUrl);
+  return tunnelUrl;
 };
 
 const createTRPCClientConfig = () => ({
@@ -39,11 +43,13 @@ const createTRPCClientConfig = () => ({
         
         console.log('🔄 tRPC request:', url, options?.method || 'GET');
         console.log('🌐 Base URL:', getBaseUrl());
+        console.log('📋 Request headers:', options?.headers);
+        console.log('📦 Request body:', options?.body);
         
         try {
           // Add timeout to prevent hanging requests
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
           
           const response = await fetch(url, {
             ...options,
@@ -59,6 +65,7 @@ const createTRPCClientConfig = () => ({
           clearTimeout(timeoutId);
           
           console.log('✅ tRPC response status:', response.status);
+          console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
           
           if (!response.ok) {
             const errorText = await response.text();
@@ -70,7 +77,7 @@ const createTRPCClientConfig = () => ({
               throw new Error('Server returned HTML instead of JSON. Backend may not be running or misconfigured.');
             }
             
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
           }
           
           // Check content type
@@ -85,6 +92,7 @@ const createTRPCClientConfig = () => ({
           return response;
         } catch (error: any) {
           console.error('❌ tRPC fetch error:', error.message);
+          console.error('❌ Full error:', error);
           
           if (error.name === 'AbortError') {
             throw new Error('Request timeout - please check your connection');

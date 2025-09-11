@@ -11,12 +11,18 @@ import { AuthProvider } from "@/providers/auth-provider";
 import { VendorProvider } from "@/providers/vendor-provider";
 import { CartProvider } from "@/providers/cart-provider";
 import FloatingCartButton from "@/components/FloatingCartButton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: 3,
       staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
@@ -111,12 +117,16 @@ function RootLayoutNav() {
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
+    console.log('🌍 Using env base URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
     return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
   if (typeof window !== 'undefined') {
+    console.log('🌍 Using window origin:', window.location.origin);
     return window.location.origin;
   }
-  return 'https://je86yffmqj9hqfu4somgm.rork.com';
+  const tunnelUrl = 'https://je86yffmqj9hqfu4somgm.rork.com';
+  console.log('🌍 Using tunnel URL:', tunnelUrl);
+  return tunnelUrl;
 };
 
 export default function RootLayout() {
@@ -134,6 +144,26 @@ export default function RootLayout() {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             }),
+            fetch: async (url, options) => {
+              console.log('🔄 RootLayout tRPC request:', url);
+              
+              try {
+                const response = await fetch(url, {
+                  ...options,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    ...options?.headers,
+                  },
+                });
+                
+                console.log('✅ RootLayout tRPC response:', response.status);
+                return response;
+              } catch (error) {
+                console.error('❌ RootLayout tRPC fetch error:', error);
+                throw error;
+              }
+            },
           }),
         ],
       });
@@ -148,19 +178,21 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <QueryClientProvider client={queryClient}>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <AuthProvider>
-            <VendorProvider>
-              <CartProvider>
-                <RootLayoutNav />
-              </CartProvider>
-            </VendorProvider>
-          </AuthProvider>
-        </trpc.Provider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.container}>
+        <QueryClientProvider client={queryClient}>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <AuthProvider>
+              <VendorProvider>
+                <CartProvider>
+                  <RootLayoutNav />
+                </CartProvider>
+              </VendorProvider>
+            </AuthProvider>
+          </trpc.Provider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

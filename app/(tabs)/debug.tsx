@@ -57,7 +57,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, basicApi: { status: 'pending', message: 'Testing basic API...' } }));
       
-      const response = await fetch('https://je86yffmqj9hqfu4somgm.rork.com/api/test', {
+      const response = await fetch('https://je86yffmqj9hqfu4somgm.rork.com/api', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -71,7 +71,7 @@ export default function DebugScreen() {
           ...prev, 
           basicApi: { 
             status: 'success', 
-            message: 'Basic API connection successful', 
+            message: '✅ Basic API connection successful', 
             data 
           } 
         }));
@@ -80,93 +80,88 @@ export default function DebugScreen() {
         throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
     } catch (error: any) {
+      console.error('❌ Basic API failed:', error.message);
       setTests(prev => ({ 
         ...prev, 
         basicApi: { 
           status: 'error', 
-          message: `Basic API failed: ${error.message}` 
+          message: `❌ Basic API failed: ${error.message}` 
         } 
       }));
     }
 
-    // Test 2: tRPC endpoint
+    // Test 2: tRPC endpoint using React Query
     try {
       setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Testing tRPC...' } }));
       
-      // Test direct tRPC call
-      const response = await fetch('https://je86yffmqj9hqfu4somgm.rork.com/api/trpc/example.hi', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          json: { name: 'Debug Test' }
-        })
-      });
+      // Use tRPC client directly
+      const { trpcClient } = await import('@/lib/trpc');
+      const data = await trpcClient.example.hi.query({ name: 'Debug Test' });
       
-      if (response.ok) {
-        const data = await response.json();
+      setTests(prev => ({ 
+        ...prev, 
+        trpc: { 
+          status: 'success', 
+          message: '✅ tRPC connection working!', 
+          data 
+        } 
+      }));
+    } catch (error: any) {
+      console.error('❌ tRPC connection failed:', error.message);
+      
+      // Try a simpler test without parameters
+      try {
+        setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Retrying tRPC without params...' } }));
+        
+        const { trpcClient } = await import('@/lib/trpc');
+        const data = await trpcClient.example.hi.query();
+        
         setTests(prev => ({ 
           ...prev, 
           trpc: { 
             status: 'success', 
-            message: 'tRPC connection successful', 
+            message: '✅ tRPC connection working (retry)!', 
             data 
           } 
         }));
-      } else {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      } catch (retryError: any) {
+        console.error('❌ tRPC retry also failed:', retryError.message);
+        setTests(prev => ({ 
+          ...prev, 
+          trpc: { 
+            status: 'error', 
+            message: `❌ tRPC connection failed: ${error.message}. Retry: ${retryError.message}` 
+          } 
+        }));
       }
-    } catch (error: any) {
-      setTests(prev => ({ 
-        ...prev, 
-        trpc: { 
-          status: 'error', 
-          message: `tRPC failed: ${error.message}` 
-        } 
-      }));
     }
 
     // Test 3: Vendor endpoints
     try {
       setTests(prev => ({ ...prev, vendors: { status: 'pending', message: 'Testing vendor endpoints...' } }));
       
-      const response = await fetch('https://je86yffmqj9hqfu4somgm.rork.com/api/trpc/vendors.get', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          json: {
-            limit: 5,
-            offset: 0
-          }
-        })
+      // Use tRPC client for vendor endpoints
+      const { trpcClient } = await import('@/lib/trpc');
+      const data = await trpcClient.vendors.get.query({
+        limit: 5,
+        offset: 0
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setTests(prev => ({ 
-          ...prev, 
-          vendors: { 
-            status: 'success', 
-            message: 'Vendor endpoints working', 
-            data 
-          } 
-        }));
-      } else {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
+      setTests(prev => ({ 
+        ...prev, 
+        vendors: { 
+          status: 'success', 
+          message: `✅ Found ${data.vendors.length} vendors`, 
+          data 
+        } 
+      }));
     } catch (error: any) {
+      console.error('❌ Vendor endpoints failed:', error.message);
       setTests(prev => ({ 
         ...prev, 
         vendors: { 
           status: 'error', 
-          message: `Vendor endpoints failed: ${error.message}` 
+          message: `❌ Vendor endpoints failed: ${error.message}` 
         } 
       }));
     }
