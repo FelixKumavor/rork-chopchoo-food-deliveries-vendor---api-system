@@ -4,7 +4,9 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { trpc, createTRPCReactClient } from "@/lib/trpc";
+import { trpc } from "@/lib/trpc";
+import { httpLink } from "@trpc/client";
+import superjson from "superjson";
 import { AuthProvider } from "@/providers/auth-provider";
 import { VendorProvider } from "@/providers/vendor-provider";
 import { CartProvider } from "@/providers/cart-provider";
@@ -107,8 +109,33 @@ function RootLayoutNav() {
   );
 }
 
+const getBaseUrl = () => {
+  if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
+    return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'https://je86yffmqj9hqfu4somgm.rork.com';
+};
+
 export default function RootLayout() {
-  const [trpcClient] = React.useState(() => createTRPCReactClient());
+  const [trpcClient] = React.useState(() => {
+    try {
+      console.log('🔧 Creating tRPC React client...');
+      return trpc.createClient({
+        links: [
+          httpLink({
+            url: `${getBaseUrl()}/api/trpc`,
+            transformer: superjson,
+          }),
+        ],
+      });
+    } catch (error) {
+      console.error('❌ Failed to create tRPC client in RootLayout:', error);
+      throw error;
+    }
+  });
 
   useEffect(() => {
     SplashScreen.hideAsync();

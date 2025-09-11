@@ -33,6 +33,10 @@ const createTRPCClientConfig = () => ({
         };
       },
       fetch: async (url, options) => {
+        if (!url || typeof url !== 'string' || url.trim().length === 0) {
+          throw new Error('Invalid URL provided to fetch');
+        }
+        
         console.log('🔄 tRPC request:', url, options?.method || 'GET');
         console.log('🌐 Base URL:', getBaseUrl());
         
@@ -99,5 +103,12 @@ const createTRPCClientConfig = () => ({
 
 export const trpcClient = createTRPCClient<AppRouter>(createTRPCClientConfig());
 
-// Create the React client
-export const createTRPCReactClient = () => trpc.createClient(createTRPCClientConfig());
+// Create the React client factory function
+export function createTRPCReactClient() {
+  try {
+    return trpc.createClient(createTRPCClientConfig());
+  } catch (error) {
+    console.error('❌ Failed to create tRPC React client:', error);
+    throw error;
+  }
+}
