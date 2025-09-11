@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RefreshCw, CheckCircle, XCircle, Wifi, Server } from 'lucide-react-native';
-import { trpc } from '@/lib/trpc';
+
 
 export default function DebugScreen() {
   const insets = useSafeAreaInsets();
@@ -17,10 +17,7 @@ export default function DebugScreen() {
   }>({});
   const [isRunning, setIsRunning] = useState(false);
 
-  // tRPC connectivity test
-  const hiQuery = trpc.example.hi.useQuery({ name: 'Debug Test' }, {
-    enabled: false, // Don't run automatically
-  });
+  // Remove unused hiQuery to fix lint warning
 
   const runConnectivityTests = async () => {
     setIsRunning(true);
@@ -96,19 +93,31 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Testing tRPC...' } }));
       
-      const result = await hiQuery.refetch();
+      // Test direct tRPC call
+      const response = await fetch('https://je86yffmqj9hqfu4somgm.rork.com/api/trpc/example.hi', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          json: { name: 'Debug Test' }
+        })
+      });
       
-      if (result.data) {
+      if (response.ok) {
+        const data = await response.json();
         setTests(prev => ({ 
           ...prev, 
           trpc: { 
             status: 'success', 
             message: 'tRPC connection successful', 
-            data: result.data 
+            data 
           } 
         }));
       } else {
-        throw new Error('No data returned from tRPC');
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
     } catch (error: any) {
       setTests(prev => ({ 
@@ -130,7 +139,12 @@ export default function DebugScreen() {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+          json: {
+            limit: 5,
+            offset: 0
+          }
+        })
       });
       
       if (response.ok) {

@@ -123,11 +123,17 @@ export default function RootLayout() {
   const [trpcClient] = React.useState(() => {
     try {
       console.log('🔧 Creating tRPC React client...');
+      console.log('🌍 Base URL:', getBaseUrl());
+      
       return trpc.createClient({
         links: [
           httpLink({
             url: `${getBaseUrl()}/api/trpc`,
             transformer: superjson,
+            headers: () => ({
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            }),
           }),
         ],
       });

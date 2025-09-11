@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "../../../create-context";
 
 const createVendorSchema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
@@ -14,7 +14,7 @@ const createVendorSchema = z.object({
   is_active: z.boolean().default(true),
   status: z.enum(["pending", "approved", "rejected"]).default("pending"),
   delivery_radius: z.number().min(1, "Delivery radius must be at least 1km"),
-  opening_hours: z.record(z.object({
+  opening_hours: z.record(z.string(), z.object({
     open: z.string(),
     close: z.string(),
     is_open: z.boolean()

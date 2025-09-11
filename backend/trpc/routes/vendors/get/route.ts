@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "../../../create-context";
 
 const getVendorsSchema = z.object({
   status: z.enum(["pending", "approved", "rejected"]).optional(),

@@ -102,13 +102,3 @@ const createTRPCClientConfig = () => ({
 });
 
 export const trpcClient = createTRPCClient<AppRouter>(createTRPCClientConfig());
-
-// Create the React client factory function
-export function createTRPCReactClient() {
-  try {
-    return trpc.createClient(createTRPCClientConfig());
-  } catch (error) {
-    console.error('❌ Failed to create tRPC React client:', error);
-    throw error;
-  }
-}
