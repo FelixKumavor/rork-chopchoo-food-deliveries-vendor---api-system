@@ -38,7 +38,7 @@ interface CheckoutData {
 }
 
 export default function CartScreen() {
-  const { cart, updateQuantity, removeFromCart, applyPromoCode, removePromoCode } = useCart();
+  const { cart, updateQuantity, removeFromCart, applyPromoCode, removePromoCode, addToCart } = useCart();
   const { user, login } = useAuth();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showPromoInput, setShowPromoInput] = useState(false);
@@ -56,6 +56,54 @@ export default function CartScreen() {
       login('demo@chopchoo.com', 'password').catch(console.error);
     }
   }, [user, login]);
+
+  // Add test items to cart if cart is empty (for testing purposes)
+  React.useEffect(() => {
+    const addTestItemsToCart = async () => {
+      if (!cart || cart.items.length === 0) {
+        console.log('🧪 Adding test items to cart for testing...');
+        try {
+          const testVendor = {
+            id: "vendor_1",
+            name: "Mama's Kitchen",
+            slug: "mamas-kitchen",
+            logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
+            cuisine_type: "Ghanaian",
+            address: "123 Oxford Street, Osu",
+            city: "Accra",
+            phone: "+233 20 123 4567",
+            email: "info@mamaskitchen.com",
+            rating: 4.5,
+            is_active: true,
+            status: "approved" as const,
+            created_at: "2024-01-01T00:00:00Z"
+          };
+
+          const testMenuItem = {
+            id: "item_1",
+            vendor_id: "vendor_1",
+            name: "Jollof Rice with Chicken",
+            description: "Delicious Ghanaian jollof rice served with grilled chicken",
+            price: 25.00,
+            image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            category: "Main Course",
+            available: true,
+            created_at: "2024-01-01T00:00:00Z"
+          };
+
+          await addToCart(testVendor, testMenuItem, 2, [], "Extra spicy please");
+          console.log('✅ Test items added to cart');
+        } catch (error) {
+          console.error('❌ Failed to add test items:', error);
+        }
+      }
+    };
+
+    // Only add test items if user is logged in
+    if (user) {
+      addTestItemsToCart();
+    }
+  }, [user, cart]);
 
   // Update checkout data when user changes
   React.useEffect(() => {
@@ -147,8 +195,8 @@ export default function CartScreen() {
       return;
     }
 
-    if (!cart) {
-      alert('Your cart is empty');
+    if (!cart || !cart.vendor) {
+      alert('Cart is empty or restaurant information is missing');
       return;
     }
 
@@ -166,7 +214,7 @@ export default function CartScreen() {
 
     try {
       const orderData = {
-        vendor_id: cart.vendor_id,
+        vendor_id: cart.vendor_id || cart.vendor?.id,
         items: cart.items.map(item => ({
           menu_item_id: item.menu_item.id,
           quantity: item.quantity,
@@ -325,8 +373,12 @@ export default function CartScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Restaurant Info */}
         <View style={styles.restaurantHeader}>
-          <Text style={styles.restaurantName}>{cart.vendor.name}</Text>
-          <Text style={styles.restaurantAddress}>{cart.vendor.address}</Text>
+          <Text style={styles.restaurantName}>
+            {cart.vendor?.name || 'Restaurant'}
+          </Text>
+          <Text style={styles.restaurantAddress}>
+            {cart.vendor?.address || 'Address not available'}
+          </Text>
         </View>
 
         {/* Cart Items */}

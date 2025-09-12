@@ -110,3 +110,6 @@ const createTRPCClientConfig = () => ({
 });
 
 export const trpcClient = createTRPCProxyClient<AppRouter>(createTRPCClientConfig());
+
+// Export the client configuration for React Query provider
+export const trpcClientConfig = createTRPCClientConfig();

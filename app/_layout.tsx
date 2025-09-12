@@ -4,9 +4,7 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { trpc } from "@/lib/trpc";
-import { httpBatchLink } from "@trpc/client";
-import superjson from "superjson";
+import { trpc, trpcClientConfig } from "@/lib/trpc";
 import { AuthProvider } from "@/providers/auth-provider";
 import { VendorProvider } from "@/providers/vendor-provider";
 import { CartProvider } from "@/providers/cart-provider";
@@ -115,58 +113,14 @@ function RootLayoutNav() {
   );
 }
 
-const getBaseUrl = () => {
-  if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    console.log('🌍 Using env base URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
-    return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-  }
-  if (typeof window !== 'undefined') {
-    console.log('🌍 Using window origin:', window.location.origin);
-    return window.location.origin;
-  }
-  const tunnelUrl = 'https://je86yffmqj9hqfu4somgm.rork.com';
-  console.log('🌍 Using tunnel URL:', tunnelUrl);
-  return tunnelUrl;
-};
+
 
 export default function RootLayout() {
   const [trpcClient] = React.useState(() => {
     try {
       console.log('🔧 Creating tRPC React client...');
-      console.log('🌍 Base URL:', getBaseUrl());
       
-      return trpc.createClient({
-        links: [
-          httpBatchLink({
-            url: `${getBaseUrl()}/api/trpc`,
-            transformer: superjson,
-            headers: () => ({
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            }),
-            fetch: async (url, options) => {
-              console.log('🔄 RootLayout tRPC request:', url);
-              
-              try {
-                const response = await fetch(url, {
-                  ...options,
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    ...options?.headers,
-                  },
-                });
-                
-                console.log('✅ RootLayout tRPC response:', response.status);
-                return response;
-              } catch (error) {
-                console.error('❌ RootLayout tRPC fetch error:', error);
-                throw error;
-              }
-            },
-          }),
-        ],
-      });
+      return trpc.createClient(trpcClientConfig);
     } catch (error) {
       console.error('❌ Failed to create tRPC client in RootLayout:', error);
       throw error;
