@@ -3,6 +3,7 @@ import { httpBatchLink, createTRPCProxyClient } from "@trpc/client";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import superjson from "superjson";
 
+// Create the tRPC React client
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
@@ -37,11 +38,16 @@ const createTRPCClientConfig = () => ({
         };
       },
       fetch: async (url, options) => {
-        if (!url || typeof url !== 'string' || url.trim().length === 0) {
+        // Validate URL input
+        if (!url || typeof url !== 'string') {
           throw new Error('Invalid URL provided to fetch');
         }
+        const trimmedUrl = url.trim();
+        if (trimmedUrl.length === 0 || trimmedUrl.length > 2000) {
+          throw new Error('URL is empty or too long');
+        }
         
-        console.log('🔄 tRPC request:', url, options?.method || 'GET');
+        console.log('🔄 tRPC request:', trimmedUrl, options?.method || 'GET');
         console.log('🌐 Base URL:', getBaseUrl());
         console.log('📋 Request headers:', options?.headers);
         console.log('📦 Request body:', options?.body);

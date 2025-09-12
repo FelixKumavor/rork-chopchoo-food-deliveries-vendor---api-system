@@ -1,14 +1,25 @@
 import { z } from "zod";
 import { publicProcedure } from "../../../create-context";
 
-export default publicProcedure
-  .input(z.object({ name: z.string().optional() }).optional())
+const hiInputSchema = z.object({ 
+  name: z.string().optional() 
+}).optional();
+
+export const hiProcedure = publicProcedure
+  .input(hiInputSchema)
   .query(({ input }) => {
+    console.log('🔍 Hi procedure called with input:', input);
     const name = input?.name || "World";
-    return {
+    const response = {
       hello: `Hello ${name}!`,
       date: new Date(),
       status: "success",
-      message: "tRPC connection working!"
+      message: "tRPC connection working!",
+      timestamp: new Date().toISOString()
     };
+    console.log('✅ Hi procedure response:', response);
+    return response;
   });
+
+// Keep default export for backward compatibility
+export default hiProcedure;

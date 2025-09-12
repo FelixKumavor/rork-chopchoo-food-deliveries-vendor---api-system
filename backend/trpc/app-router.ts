@@ -1,5 +1,5 @@
 import { createTRPCRouter } from "./create-context";
-import hiRoute from "./routes/example/hi/route";
+import { hiProcedure } from "./routes/example/hi/route";
 import initializeMomoRoute from "./routes/payment/initialize-momo/route";
 import verifyPaymentRoute from "./routes/payment/verify/route";
 import { sendOtpProcedure, verifyOtpProcedure } from "./routes/auth/otp/route";
@@ -33,7 +33,7 @@ import { getVendorBySlugProcedure } from "./routes/vendors/get-by-slug/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
-    hi: hiRoute,
+    hi: hiProcedure,
   }),
   payment: createTRPCRouter({
     initializeMomo: initializeMomoRoute,

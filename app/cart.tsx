@@ -195,9 +195,14 @@ export default function CartScreen() {
       return;
     }
 
-    if (!cart || !cart.vendor) {
-      alert('Cart is empty or restaurant information is missing');
+    if (!cart) {
+      alert('Cart is empty');
       return;
+    }
+    
+    // Allow order even without vendor info in demo mode
+    if (!cart.vendor) {
+      console.log('⚠️ No vendor info available, using fallback data for demo');
     }
 
     setIsCheckingOut(true);
@@ -214,7 +219,7 @@ export default function CartScreen() {
 
     try {
       const orderData = {
-        vendor_id: cart.vendor_id || cart.vendor?.id,
+        vendor_id: cart.vendor_id || cart.vendor?.id || 'demo_vendor_1',
         items: cart.items.map(item => ({
           menu_item_id: item.menu_item.id,
           quantity: item.quantity,
@@ -374,11 +379,16 @@ export default function CartScreen() {
         {/* Restaurant Info */}
         <View style={styles.restaurantHeader}>
           <Text style={styles.restaurantName}>
-            {cart.vendor?.name || 'Restaurant'}
+            {cart.vendor?.name || 'Demo Restaurant'}
           </Text>
           <Text style={styles.restaurantAddress}>
-            {cart.vendor?.address || 'Address not available'}
+            {cart.vendor?.address || 'Demo Address, Demo City'}
           </Text>
+          {!cart.vendor && (
+            <Text style={styles.restaurantNote}>
+              📝 Demo mode - Restaurant info will be available when connected to backend
+            </Text>
+          )}
         </View>
 
         {/* Cart Items */}
@@ -666,6 +676,12 @@ const styles = StyleSheet.create({
   restaurantAddress: {
     fontSize: 14,
     color: '#8E8E93',
+  },
+  restaurantNote: {
+    fontSize: 12,
+    color: '#FF6B35',
+    fontStyle: 'italic',
+    marginTop: 8,
   },
   section: {
     backgroundColor: 'white',
