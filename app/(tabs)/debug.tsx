@@ -57,7 +57,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, basicApi: { status: 'pending', message: 'Testing basic API...' } }));
       
-      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api', {
+      const response = await fetch('https://uxaignbficnflyxe6jbsk.rork.live/api', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -94,7 +94,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, debugApi: { status: 'pending', message: 'Testing debug endpoint...' } }));
       
-      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api/debug', {
+      const response = await fetch('https://uxaignbficnflyxe6jbsk.rork.live/api/debug', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -131,7 +131,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, trpcDirect: { status: 'pending', message: 'Testing tRPC endpoint directly...' } }));
       
-      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api/trpc/example.hi', {
+      const response = await fetch('https://uxaignbficnflyxe6jbsk.rork.live/api/trpc/example.hi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
