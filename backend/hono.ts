@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
-import { appRouter } from "./trpc/app-router";
-import { createContext } from "./trpc/create-context";
+import { appRouter } from "@/backend/trpc/app-router";
+import { createContext } from "@/backend/trpc/create-context";
 import webhookHandler from "./webhook-handler";
 
 // app will be mounted at /api

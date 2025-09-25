@@ -193,9 +193,32 @@ export default function RestaurantScreen() {
   // Get vendor from backend or fallback to mock data
   const vendor = vendorData?.vendor || mockVendors[slug as keyof typeof mockVendors];
   
+  // Always show a vendor - use fallback if needed
+  const finalVendor = vendor || {
+    id: "vendor_fallback",
+    name: "Demo Restaurant",
+    slug: "demo-restaurant",
+    logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
+    cuisine_type: "International",
+    address: "123 Demo Street",
+    city: "Demo City",
+    phone: "+233 20 000 0000",
+    email: "demo@restaurant.com",
+    rating: 4.5,
+    is_active: true,
+    status: "approved" as const,
+    delivery_radius: 5,
+    created_at: "2024-01-01T00:00:00Z",
+    menu_items: mockMenuItems.map(item => ({
+      ...item,
+      vendor_id: "vendor_fallback",
+      created_at: "2024-01-01T00:00:00Z",
+    }))
+  };
+  
   console.log('🍽️ Restaurant page - slug:', slug);
   console.log('🍽️ Backend vendor data:', vendorData);
-  console.log('🍽️ Final vendor:', vendor);
+  console.log('🍽️ Final vendor:', finalVendor);
   console.log('🍽️ Error:', error);
   const { addToCart: addToCartProvider, cart, itemCount } = useCart();
 
@@ -314,29 +337,6 @@ export default function RestaurantScreen() {
       </SafeAreaView>
     );
   }
-
-  // Always show a vendor - use fallback if needed
-  const finalVendor = vendor || {
-    id: "vendor_fallback",
-    name: "Demo Restaurant",
-    slug: "demo-restaurant",
-    logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
-    cuisine_type: "International",
-    address: "123 Demo Street",
-    city: "Demo City",
-    phone: "+233 20 000 0000",
-    email: "demo@restaurant.com",
-    rating: 4.5,
-    is_active: true,
-    status: "approved" as const,
-    delivery_radius: 5,
-    created_at: "2024-01-01T00:00:00Z",
-    menu_items: mockMenuItems.map(item => ({
-      ...item,
-      vendor_id: "vendor_fallback",
-      created_at: "2024-01-01T00:00:00Z",
-    }))
-  };
 
   return (
     <View style={styles.container}>
