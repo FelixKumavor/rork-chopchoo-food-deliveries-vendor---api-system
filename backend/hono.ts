@@ -29,6 +29,9 @@ app.use('*', async (c, next) => {
 });
 
 // Mount tRPC router at /trpc
+console.log('🔧 Mounting tRPC server...');
+console.log('📋 Router procedures:', Object.keys(appRouter._def.procedures || {}));
+
 app.use(
   "/trpc/*",
   trpcServer({
@@ -36,10 +39,18 @@ app.use(
     router: appRouter,
     createContext,
     onError: ({ error, path }) => {
-      console.error(`tRPC Error on ${path}:`, error);
+      console.error(`❌ tRPC Error on ${path}:`, error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        cause: error.cause,
+        stack: error.stack
+      });
     },
   })
 );
+
+console.log('✅ tRPC server mounted successfully');
 
 // Mount webhook handlers
 app.route("/webhook", webhookHandler);
@@ -76,7 +87,39 @@ app.get("/debug", (c) => {
       health: "/api"
     },
     cors: "enabled",
-    environment: process.env.NODE_ENV || "development"
+    environment: process.env.NODE_ENV || "development",
+    routerInfo: {
+      procedures: Object.keys(appRouter._def.procedures || {}),
+      exampleProcedures: Object.keys((appRouter._def.procedures as any)?.example?._def?.procedures || {}),
+      hasHiProcedure: !!(appRouter._def.procedures as any)?.example?._def?.procedures?.hi
+    }
+  });
+});
+
+// Add a specific endpoint to test router structure
+app.get("/test-router", (c) => {
+  const routerStructure = {
+    hasAppRouter: !!appRouter,
+    hasDefinition: !!appRouter._def,
+    hasProcedures: !!appRouter._def.procedures,
+    procedureKeys: Object.keys(appRouter._def.procedures || {}),
+    exampleRouter: {
+      exists: !!(appRouter._def.procedures as any)?.example,
+      hasDefinition: !!(appRouter._def.procedures as any)?.example?._def,
+      hasProcedures: !!(appRouter._def.procedures as any)?.example?._def?.procedures,
+      procedureKeys: Object.keys((appRouter._def.procedures as any)?.example?._def?.procedures || {}),
+      hiProcedure: {
+        exists: !!(appRouter._def.procedures as any)?.example?._def?.procedures?.hi,
+        type: typeof (appRouter._def.procedures as any)?.example?._def?.procedures?.hi
+      }
+    }
+  };
+  
+  return c.json({
+    status: "success",
+    message: "Router structure analysis",
+    structure: routerStructure,
+    timestamp: new Date().toISOString()
   });
 });
 

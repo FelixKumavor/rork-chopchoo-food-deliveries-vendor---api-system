@@ -169,9 +169,35 @@ export default function DebugScreen() {
       }));
     }
 
-    // Test 3: tRPC client test
+    // Test 3: Direct test procedure
     try {
-      setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Testing tRPC client...' } }));
+      setTests(prev => ({ ...prev, directTest: { status: 'pending', message: 'Testing direct test procedure...' } }));
+      
+      const { trpcClient } = await import('@/lib/trpc');
+      const data = await trpcClient.test.query();
+      
+      setTests(prev => ({ 
+        ...prev, 
+        directTest: { 
+          status: 'success', 
+          message: '✅ Direct test procedure working!', 
+          data 
+        } 
+      }));
+    } catch (error: any) {
+      console.error('❌ Direct test failed:', error.message);
+      setTests(prev => ({ 
+        ...prev, 
+        directTest: { 
+          status: 'error', 
+          message: `❌ Direct test failed: ${error.message}` 
+        } 
+      }));
+    }
+
+    // Test 4: tRPC client test (example.hi)
+    try {
+      setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Testing tRPC client (example.hi)...' } }));
       
       // Use tRPC client directly
       const { trpcClient } = await import('@/lib/trpc');
@@ -215,7 +241,7 @@ export default function DebugScreen() {
       }
     }
 
-    // Test 4: Vendor endpoints
+    // Test 5: Vendor endpoints
     try {
       setTests(prev => ({ ...prev, vendors: { status: 'pending', message: 'Testing vendor endpoints...' } }));
       
@@ -245,7 +271,7 @@ export default function DebugScreen() {
       }));
     }
 
-    // Test 5: Vendor by slug test
+    // Test 6: Vendor by slug test
     try {
       setTests(prev => ({ ...prev, vendorBySlug: { status: 'pending', message: 'Testing vendor by slug...' } }));
       
