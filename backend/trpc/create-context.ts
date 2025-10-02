@@ -16,7 +16,7 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 // Initialize tRPC
 const t = initTRPC.context<Context>().create({
-  transformer: superjson,
+  // transformer: superjson, // Temporarily disable transformer
 });
 
 console.log('✅ tRPC initialized successfully');

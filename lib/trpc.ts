@@ -36,7 +36,7 @@ const createTRPCClientConfig = () => ({
   links: [
     httpBatchLink({
       url: `${getBaseUrl()}/api/trpc`,
-      transformer: superjson,
+      // transformer: superjson, // Temporarily disable transformer
       headers: () => {
         return {
           'Content-Type': 'application/json',
