@@ -1,5 +1,6 @@
 import { createTRPCRouter, publicProcedure } from "@/backend/trpc/create-context";
 import { hiProcedure } from "@/backend/trpc/routes/example/hi/route";
+import { z } from "zod";
 import initializeMomoRoute from "@/backend/trpc/routes/payment/initialize-momo/route";
 import verifyPaymentRoute from "@/backend/trpc/routes/payment/verify/route";
 import { sendOtpProcedure, verifyOtpProcedure } from "@/backend/trpc/routes/auth/otp/route";
@@ -32,6 +33,7 @@ import { getVendorsProcedure } from "@/backend/trpc/routes/vendors/get/route";
 import { getVendorBySlugProcedure } from "@/backend/trpc/routes/vendors/get-by-slug/route";
 
 console.log('🔧 Building tRPC router...');
+console.log('🔍 Imported hiProcedure:', typeof hiProcedure);
 
 // Create a simple test procedure directly in the router
 const testProcedure = publicProcedure
@@ -43,11 +45,27 @@ const testProcedure = publicProcedure
     };
   });
 
+// Create a simple inline hi procedure for testing
+const hiInlineProcedure = publicProcedure
+  .input(z.object({ name: z.string().optional() }).optional())
+  .query(({ input }) => {
+    console.log('🔍 Inline Hi procedure called with input:', input);
+    const name = input?.name || "World";
+    return {
+      hello: `Hello ${name}!`,
+      date: new Date(),
+      status: "success",
+      message: "Inline tRPC connection working!",
+      timestamp: new Date().toISOString()
+    };
+  });
+
 export const appRouter = createTRPCRouter({
   // Add direct test procedure
   test: testProcedure,
   example: createTRPCRouter({
     hi: hiProcedure,
+    hiInline: hiInlineProcedure,
   }),
   payment: createTRPCRouter({
     initializeMomo: initializeMomoRoute,
@@ -90,5 +108,8 @@ export const appRouter = createTRPCRouter({
 
 console.log('✅ tRPC router built successfully');
 console.log('📋 Router structure:', Object.keys(appRouter._def.procedures || {}));
+console.log('📋 Example router structure:', Object.keys((appRouter._def.procedures as any)?.example?._def?.procedures || {}));
+console.log('📋 Hi procedure exists:', !!(appRouter._def.procedures as any)?.example?._def?.procedures?.hi);
+console.log('📋 Hi procedure type:', typeof (appRouter._def.procedures as any)?.example?._def?.procedures?.hi);
 
 export type AppRouter = typeof appRouter;

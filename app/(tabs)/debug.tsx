@@ -57,7 +57,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, basicApi: { status: 'pending', message: 'Testing basic API...' } }));
       
-      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api', {
+      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -94,7 +94,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, debugApi: { status: 'pending', message: 'Testing debug endpoint...' } }));
       
-      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api/debug', {
+      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api/debug', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -131,7 +131,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, trpcDirect: { status: 'pending', message: 'Testing tRPC endpoint directly...' } }));
       
-      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api/trpc/example.hi', {
+      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api/trpc/example.hi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,6 +218,33 @@ export default function DebugScreen() {
         trpc: { 
           status: 'error', 
           message: `❌ tRPC connection failed: ${error.message}` 
+        } 
+      }));
+    }
+
+    // Test 4.5: tRPC client test (example.hiInline)
+    try {
+      setTests(prev => ({ ...prev, trpcInline: { status: 'pending', message: 'Testing tRPC client (example.hiInline)...' } }));
+      
+      // Use tRPC client directly
+      const { trpcClient } = await import('@/lib/trpc');
+      const data = await trpcClient.example.hiInline.query({ name: 'Inline Debug Test' });
+      
+      setTests(prev => ({ 
+        ...prev, 
+        trpcInline: { 
+          status: 'success', 
+          message: '✅ tRPC inline client working!', 
+          data 
+        } 
+      }));
+    } catch (error: any) {
+      console.error('❌ tRPC inline client failed:', error.message);
+      setTests(prev => ({ 
+        ...prev, 
+        trpcInline: { 
+          status: 'error', 
+          message: `❌ tRPC inline connection failed: ${error.message}` 
         } 
       }));
     }
