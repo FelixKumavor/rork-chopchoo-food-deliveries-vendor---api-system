@@ -21,7 +21,7 @@ const getBaseUrl = () => {
   }
   
   // For mobile development, use the tunnel URL
-  const tunnelUrl = 'https://uxaignbficnflyxe6jbsk.rork.live';
+  const tunnelUrl = 'https://3wugogu368idzatsalgh3.rork.live';
   console.log('🌍 Using tunnel URL:', tunnelUrl);
   return tunnelUrl;
 };

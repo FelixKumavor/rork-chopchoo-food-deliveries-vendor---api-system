@@ -36,19 +36,47 @@ export default function HomeScreen() {
   console.log('🏠 HomeScreen render - isLoading:', isLoading, 'vendors count:', vendors.length);
   console.log('🏠 HomeScreen vendors data:', vendors);
   
-  // Test tRPC connectivity
-  const connectivityTest = trpc.example.hi.useQuery({ name: 'ChopChoo' });
+  // Test tRPC connectivity with error handling
+  const connectivityTest = trpc.example.hi.useQuery(
+    { name: 'ChopChoo' },
+    {
+      retry: 2,
+      retryDelay: 1000,
+      refetchOnWindowFocus: false,
+      staleTime: 30000, // 30 seconds
+    }
+  );
+  
+  // Fallback to inline procedure if main one fails
+  const fallbackTest = trpc.example.hiInline.useQuery(
+    { name: 'ChopChoo Fallback' },
+    {
+      enabled: !!connectivityTest.error, // Only run if main test fails
+      retry: 1,
+      retryDelay: 500,
+      refetchOnWindowFocus: false,
+      staleTime: 30000,
+    }
+  );
   
   // Monitor connection status
   useEffect(() => {
     if (connectivityTest.data) {
       console.log('✅ tRPC connection successful:', connectivityTest.data);
       setConnectionStatus('connected');
-    } else if (connectivityTest.error) {
-      console.error('❌ tRPC connection failed:', connectivityTest.error?.message || connectivityTest.error);
+    } else if (fallbackTest.data) {
+      console.log('✅ tRPC fallback connection successful:', fallbackTest.data);
+      setConnectionStatus('connected');
+    } else if (connectivityTest.error && fallbackTest.error) {
+      console.error('❌ Both tRPC connections failed');
+      console.error('❌ Main error:', connectivityTest.error?.message || connectivityTest.error);
+      console.error('❌ Fallback error:', fallbackTest.error?.message || fallbackTest.error);
       setConnectionStatus('error');
+    } else if (connectivityTest.error && !fallbackTest.error) {
+      console.log('🔄 Main tRPC failed, trying fallback...');
+      // Keep checking status, fallback might still succeed
     }
-  }, [connectivityTest.data, connectivityTest.error]);
+  }, [connectivityTest.data, connectivityTest.error, fallbackTest.data, fallbackTest.error]);
   
   // Add error boundary for debugging
   useEffect(() => {
@@ -57,7 +85,7 @@ export default function HomeScreen() {
     // Test basic API connectivity
     const testConnectivity = async () => {
       try {
-        const baseUrl = 'https://je86yffmqj9hqfu4somgm.rork.com';
+        const baseUrl = 'https://3wugogu368idzatsalgh3.rork.live';
         console.log('Testing connectivity to:', baseUrl);
         
         const response = await fetch(`${baseUrl}/api/test`, {

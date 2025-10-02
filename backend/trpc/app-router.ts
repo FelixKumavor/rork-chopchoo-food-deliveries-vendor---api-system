@@ -1,4 +1,5 @@
 import { createTRPCRouter, publicProcedure } from "@/backend/trpc/create-context";
+import { z } from "zod";
 import { hiProcedure } from "@/backend/trpc/routes/example/hi/route";
 import initializeMomoRoute from "@/backend/trpc/routes/payment/initialize-momo/route";
 import verifyPaymentRoute from "@/backend/trpc/routes/payment/verify/route";
@@ -34,6 +35,7 @@ import { getVendorBySlugProcedure } from "@/backend/trpc/routes/vendors/get-by-s
 console.log('🔧 Building tRPC router...');
 console.log('📋 Available procedures:', {
   hiProcedure: !!hiProcedure,
+  hiProcedureType: typeof hiProcedure,
   initializeMomoRoute: !!initializeMomoRoute,
   verifyPaymentRoute: !!verifyPaymentRoute,
   sendOtpProcedure: !!sendOtpProcedure,
@@ -57,14 +59,38 @@ console.log('📋 Available procedures:', {
   getVendorBySlugProcedure: !!getVendorBySlugProcedure,
 });
 
+// Create a simple inline hi procedure as backup
+const inlineHiProcedure = publicProcedure
+  .input(z.object({ name: z.string().optional() }).optional())
+  .query(({ input }) => {
+    console.log('🔍 Inline hi procedure called with input:', input);
+    const name = input?.name || "World";
+    return {
+      hello: `Hello ${name}!`,
+      date: new Date(),
+      status: "success",
+      message: "Inline tRPC connection working!",
+      timestamp: new Date().toISOString()
+    };
+  });
+
 // Create the example router first
+console.log('🔍 Creating example router with hiProcedure:', {
+  hiProcedure: !!hiProcedure,
+  hiProcedureType: typeof hiProcedure,
+  hiProcedureKeys: hiProcedure ? Object.keys(hiProcedure) : 'N/A'
+});
+
 const exampleRouter = createTRPCRouter({
-  hi: hiProcedure,
+  hi: hiProcedure || inlineHiProcedure,
+  hiInline: inlineHiProcedure,
 });
 
 console.log('🔍 Example router created:', {
   hasHi: !!exampleRouter._def.procedures.hi,
-  procedures: Object.keys(exampleRouter._def.procedures)
+  procedures: Object.keys(exampleRouter._def.procedures),
+  hiProcedureInRouter: exampleRouter._def.procedures.hi,
+  routerDef: !!exampleRouter._def
 });
 
 // Create a simple test procedure directly in the router

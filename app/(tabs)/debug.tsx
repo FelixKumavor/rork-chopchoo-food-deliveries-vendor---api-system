@@ -57,7 +57,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, basicApi: { status: 'pending', message: 'Testing basic API...' } }));
       
-      const response = await fetch('https://uxaignbficnflyxe6jbsk.rork.live/api', {
+      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -94,7 +94,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, debugApi: { status: 'pending', message: 'Testing debug endpoint...' } }));
       
-      const response = await fetch('https://uxaignbficnflyxe6jbsk.rork.live/api/debug', {
+      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api/debug', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -131,7 +131,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, trpcDirect: { status: 'pending', message: 'Testing tRPC endpoint directly...' } }));
       
-      const response = await fetch('https://uxaignbficnflyxe6jbsk.rork.live/api/trpc/example.hi', {
+      const response = await fetch('https://3wugogu368idzatsalgh3.rork.live/api/trpc/example.hi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -214,28 +214,28 @@ export default function DebugScreen() {
     } catch (error: any) {
       console.error('❌ tRPC client failed:', error.message);
       
-      // Try a simpler test without parameters
+      // Try the inline procedure
       try {
-        setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Retrying tRPC without params...' } }));
+        setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Trying inline hi procedure...' } }));
         
         const { trpcClient } = await import('@/lib/trpc');
-        const data = await trpcClient.example.hi.query();
+        const data = await trpcClient.example.hiInline.query({ name: 'Debug Test Inline' });
         
         setTests(prev => ({ 
           ...prev, 
           trpc: { 
             status: 'success', 
-            message: '✅ tRPC client working (retry)!', 
+            message: '✅ tRPC inline procedure working!', 
             data 
           } 
         }));
-      } catch (retryError: any) {
-        console.error('❌ tRPC retry also failed:', retryError.message);
+      } catch (inlineError: any) {
+        console.error('❌ tRPC inline also failed:', inlineError.message);
         setTests(prev => ({ 
           ...prev, 
           trpc: { 
             status: 'error', 
-            message: `❌ tRPC client failed: ${error.message}. Retry: ${retryError.message}` 
+            message: `❌ Both tRPC procedures failed. Original: ${error.message}. Inline: ${inlineError.message}` 
           } 
         }));
       }
