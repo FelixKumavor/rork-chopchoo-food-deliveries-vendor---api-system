@@ -85,7 +85,7 @@ export default function HomeScreen() {
     // Test basic API connectivity
     const testConnectivity = async () => {
       try {
-        const baseUrl = 'https://3wugogu368idzatsalgh3.rork.live';
+        const baseUrl = 'https://chopchoofooddeliveries.rork.ai';
         console.log('Testing connectivity to:', baseUrl);
         
         const response = await fetch(`${baseUrl}/api/test`, {
