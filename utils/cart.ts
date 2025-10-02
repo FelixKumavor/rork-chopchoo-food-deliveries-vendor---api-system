@@ -7,7 +7,36 @@ export class CartManager {
     try {
       const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
       const cartData = await AsyncStorage.getItem(this.STORAGE_KEY);
-      return cartData ? JSON.parse(cartData) : null;
+      
+      if (!cartData) {
+        return null;
+      }
+      
+      // Validate JSON before parsing
+      if (typeof cartData !== 'string' || cartData.trim().length === 0) {
+        console.warn('Invalid cart data format, clearing cart');
+        await this.clearCart();
+        return null;
+      }
+      
+      try {
+        const parsedCart = JSON.parse(cartData);
+        
+        // Validate cart structure
+        if (!parsedCart || typeof parsedCart !== 'object') {
+          console.warn('Invalid cart structure, clearing cart');
+          await this.clearCart();
+          return null;
+        }
+        
+        return parsedCart;
+      } catch (parseError) {
+        console.error('JSON parse error for cart data:', parseError);
+        console.error('Cart data that failed to parse:', cartData);
+        // Clear corrupted cart data
+        await this.clearCart();
+        return null;
+      }
     } catch (error) {
       console.error("Error getting cart:", error);
       return null;
@@ -16,8 +45,21 @@ export class CartManager {
 
   static async saveCart(cart: Cart): Promise<void> {
     try {
+      if (!cart || typeof cart !== 'object') {
+        console.error('Invalid cart object provided to saveCart');
+        return;
+      }
+      
       const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
-      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
+      const cartJson = JSON.stringify(cart);
+      
+      // Validate JSON serialization
+      if (!cartJson || cartJson === 'null' || cartJson === 'undefined') {
+        console.error('Failed to serialize cart to JSON');
+        return;
+      }
+      
+      await AsyncStorage.setItem(this.STORAGE_KEY, cartJson);
     } catch (error) {
       console.error("Error saving cart:", error);
     }

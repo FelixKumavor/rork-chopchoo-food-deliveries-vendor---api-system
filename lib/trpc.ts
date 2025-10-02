@@ -26,6 +26,7 @@ const getBaseUrl = () => {
   }
   
   // For mobile development and fallback, use the tunnel URL
+  // Updated to match current project ID from error messages
   const tunnelUrl = 'https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live';
   console.log('🌍 Using tunnel URL:', tunnelUrl);
   return tunnelUrl;
