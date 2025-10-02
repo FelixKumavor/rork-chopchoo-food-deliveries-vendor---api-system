@@ -1,5 +1,4 @@
 import { createTRPCRouter, publicProcedure } from "@/backend/trpc/create-context";
-import { z } from "zod";
 import { hiProcedure } from "@/backend/trpc/routes/example/hi/route";
 import initializeMomoRoute from "@/backend/trpc/routes/payment/initialize-momo/route";
 import verifyPaymentRoute from "@/backend/trpc/routes/payment/verify/route";
@@ -33,65 +32,6 @@ import { getVendorsProcedure } from "@/backend/trpc/routes/vendors/get/route";
 import { getVendorBySlugProcedure } from "@/backend/trpc/routes/vendors/get-by-slug/route";
 
 console.log('🔧 Building tRPC router...');
-console.log('📋 Available procedures:', {
-  hiProcedure: !!hiProcedure,
-  hiProcedureType: typeof hiProcedure,
-  initializeMomoRoute: !!initializeMomoRoute,
-  verifyPaymentRoute: !!verifyPaymentRoute,
-  sendOtpProcedure: !!sendOtpProcedure,
-  verifyOtpProcedure: !!verifyOtpProcedure,
-  createOrderRoute: !!createOrderRoute,
-  getOrdersRoute: !!getOrdersRoute,
-  trackOrderRoute: !!trackOrderRoute,
-  getProfileRoute: !!getProfileRoute,
-  updateProfileRoute: !!updateProfileRoute,
-  getAddressesRoute: !!getAddressesRoute,
-  createAddressRoute: !!createAddressRoute,
-  updateAddressRoute: !!updateAddressRoute,
-  deleteAddressRoute: !!deleteAddressRoute,
-  getPaymentMethodsRoute: !!getPaymentMethodsRoute,
-  createPaymentMethodRoute: !!createPaymentMethodRoute,
-  deletePaymentMethodRoute: !!deletePaymentMethodRoute,
-  getNotificationsRoute: !!getNotificationsRoute,
-  updateNotificationsRoute: !!updateNotificationsRoute,
-  createVendorProcedure: !!createVendorProcedure,
-  getVendorsProcedure: !!getVendorsProcedure,
-  getVendorBySlugProcedure: !!getVendorBySlugProcedure,
-});
-
-// Create a simple inline hi procedure as backup
-const inlineHiProcedure = publicProcedure
-  .input(z.object({ name: z.string().optional() }).optional())
-  .query(({ input }) => {
-    console.log('🔍 Inline hi procedure called with input:', input);
-    const name = input?.name || "World";
-    return {
-      hello: `Hello ${name}!`,
-      date: new Date(),
-      status: "success",
-      message: "Inline tRPC connection working!",
-      timestamp: new Date().toISOString()
-    };
-  });
-
-// Create the example router first
-console.log('🔍 Creating example router with hiProcedure:', {
-  hiProcedure: !!hiProcedure,
-  hiProcedureType: typeof hiProcedure,
-  hiProcedureKeys: hiProcedure ? Object.keys(hiProcedure) : 'N/A'
-});
-
-const exampleRouter = createTRPCRouter({
-  hi: hiProcedure || inlineHiProcedure,
-  hiInline: inlineHiProcedure,
-});
-
-console.log('🔍 Example router created:', {
-  hasHi: !!exampleRouter._def.procedures.hi,
-  procedures: Object.keys(exampleRouter._def.procedures),
-  hiProcedureInRouter: exampleRouter._def.procedures.hi,
-  routerDef: !!exampleRouter._def
-});
 
 // Create a simple test procedure directly in the router
 const testProcedure = publicProcedure
@@ -106,7 +46,9 @@ const testProcedure = publicProcedure
 export const appRouter = createTRPCRouter({
   // Add direct test procedure
   test: testProcedure,
-  example: exampleRouter,
+  example: createTRPCRouter({
+    hi: hiProcedure,
+  }),
   payment: createTRPCRouter({
     initializeMomo: initializeMomoRoute,
     verify: verifyPaymentRoute,
@@ -150,17 +92,3 @@ console.log('✅ tRPC router built successfully');
 console.log('📋 Router structure:', Object.keys(appRouter._def.procedures || {}));
 
 export type AppRouter = typeof appRouter;
-
-// Log the final router for debugging
-console.log('🔍 Final router type exported');
-console.log('📋 Available routes:', {
-  example: Object.keys((appRouter._def.procedures as any)?.example?._def?.procedures || {}),
-  payment: Object.keys((appRouter._def.procedures as any)?.payment?._def?.procedures || {}),
-  auth: Object.keys((appRouter._def.procedures as any)?.auth?._def?.procedures || {}),
-  orders: Object.keys((appRouter._def.procedures as any)?.orders?._def?.procedures || {}),
-  profile: Object.keys((appRouter._def.procedures as any)?.profile?._def?.procedures || {}),
-  addresses: Object.keys((appRouter._def.procedures as any)?.addresses?._def?.procedures || {}),
-  paymentMethods: Object.keys((appRouter._def.procedures as any)?.paymentMethods?._def?.procedures || {}),
-  notifications: Object.keys((appRouter._def.procedures as any)?.notifications?._def?.procedures || {}),
-  vendors: Object.keys((appRouter._def.procedures as any)?.vendors?._def?.procedures || {}),
-});

@@ -213,32 +213,13 @@ export default function DebugScreen() {
       }));
     } catch (error: any) {
       console.error('❌ tRPC client failed:', error.message);
-      
-      // Try the inline procedure
-      try {
-        setTests(prev => ({ ...prev, trpc: { status: 'pending', message: 'Trying inline hi procedure...' } }));
-        
-        const { trpcClient } = await import('@/lib/trpc');
-        const data = await trpcClient.example.hiInline.query({ name: 'Debug Test Inline' });
-        
-        setTests(prev => ({ 
-          ...prev, 
-          trpc: { 
-            status: 'success', 
-            message: '✅ tRPC inline procedure working!', 
-            data 
-          } 
-        }));
-      } catch (inlineError: any) {
-        console.error('❌ tRPC inline also failed:', inlineError.message);
-        setTests(prev => ({ 
-          ...prev, 
-          trpc: { 
-            status: 'error', 
-            message: `❌ Both tRPC procedures failed. Original: ${error.message}. Inline: ${inlineError.message}` 
-          } 
-        }));
-      }
+      setTests(prev => ({ 
+        ...prev, 
+        trpc: { 
+          status: 'error', 
+          message: `❌ tRPC connection failed: ${error.message}` 
+        } 
+      }));
     }
 
     // Test 5: Vendor endpoints
