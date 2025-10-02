@@ -15,12 +15,17 @@ const getBaseUrl = () => {
 
   // For development, use the Rork tunnel URL
   if (typeof window !== 'undefined') {
-    // Web environment - use current origin with /api path
-    console.log('🌍 Using window origin:', window.location.origin);
-    return window.location.origin;
+    // Web environment - check if we're on a rork.live domain
+    const origin = window.location.origin;
+    if (origin.includes('rork.live')) {
+      console.log('🌍 Using window origin (rork.live):', origin);
+      return origin;
+    }
+    // Otherwise use the tunnel URL
+    console.log('🌍 Using tunnel URL from web');
   }
   
-  // For mobile development, use the tunnel URL
+  // For mobile development and fallback, use the tunnel URL
   const tunnelUrl = 'https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live';
   console.log('🌍 Using tunnel URL:', tunnelUrl);
   return tunnelUrl;
@@ -64,6 +69,7 @@ const createTRPCClientConfig = () => ({
               'Content-Type': 'application/json',
               'Accept': 'application/json',
               'Cache-Control': 'no-cache',
+              'User-Agent': 'ChopChoo-Mobile-App',
               ...options?.headers,
             },
           });

@@ -1,5 +1,4 @@
 import { createTRPCRouter, publicProcedure } from "@/backend/trpc/create-context";
-import { hiProcedure } from "@/backend/trpc/routes/example/hi/route";
 import { z } from "zod";
 import initializeMomoRoute from "@/backend/trpc/routes/payment/initialize-momo/route";
 import verifyPaymentRoute from "@/backend/trpc/routes/payment/verify/route";
@@ -33,7 +32,6 @@ import { getVendorsProcedure } from "@/backend/trpc/routes/vendors/get/route";
 import { getVendorBySlugProcedure } from "@/backend/trpc/routes/vendors/get-by-slug/route";
 
 console.log('🔧 Building tRPC router...');
-console.log('🔍 Imported hiProcedure:', typeof hiProcedure);
 
 // Create a simple test procedure directly in the router
 const testProcedure = publicProcedure
@@ -45,7 +43,21 @@ const testProcedure = publicProcedure
     };
   });
 
-// Create a simple inline hi procedure for testing
+// Create example procedures directly in the router to avoid import issues
+const hiProcedure = publicProcedure
+  .input(z.object({ name: z.string().optional() }).optional())
+  .query(({ input }) => {
+    console.log('🔍 Hi procedure called with input:', input);
+    const name = input?.name || "World";
+    return {
+      hello: `Hello ${name}!`,
+      date: new Date(),
+      status: "success",
+      message: "tRPC connection working!",
+      timestamp: new Date().toISOString()
+    };
+  });
+
 const hiInlineProcedure = publicProcedure
   .input(z.object({ name: z.string().optional() }).optional())
   .query(({ input }) => {
@@ -108,8 +120,21 @@ export const appRouter = createTRPCRouter({
 
 console.log('✅ tRPC router built successfully');
 console.log('📋 Router structure:', Object.keys(appRouter._def.procedures || {}));
-console.log('📋 Example router structure:', Object.keys((appRouter._def.procedures as any)?.example?._def?.procedures || {}));
-console.log('📋 Hi procedure exists:', !!(appRouter._def.procedures as any)?.example?._def?.procedures?.hi);
-console.log('📋 Hi procedure type:', typeof (appRouter._def.procedures as any)?.example?._def?.procedures?.hi);
+
+// Log the router structure for debugging
+try {
+  const procedures = appRouter._def.procedures as any;
+  console.log('📋 Available procedures:', Object.keys(procedures));
+  
+  if (procedures.example) {
+    console.log('📋 Example procedures:', Object.keys(procedures.example._def.procedures));
+    console.log('📋 Hi procedure exists:', !!procedures.example._def.procedures.hi);
+    console.log('📋 HiInline procedure exists:', !!procedures.example._def.procedures.hiInline);
+  } else {
+    console.log('❌ Example router not found in procedures');
+  }
+} catch (error) {
+  console.error('❌ Error inspecting router structure:', error);
+}
 
 export type AppRouter = typeof appRouter;

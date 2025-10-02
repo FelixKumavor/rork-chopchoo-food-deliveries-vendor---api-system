@@ -44,11 +44,12 @@ export default function DebugScreen() {
         throw new Error(`Network test failed: ${response.status}`);
       }
     } catch (error: any) {
+      console.error('❌ Connectivity test failed:', error.message);
       setTests(prev => ({ 
         ...prev, 
         network: { 
           status: 'error', 
-          message: `Network connectivity failed: ${error.message}` 
+          message: `❌ Connectivity test failed: ${error.message}` 
         } 
       }));
     }
