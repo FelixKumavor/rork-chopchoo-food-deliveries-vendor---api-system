@@ -15,20 +15,18 @@ const getBaseUrl = () => {
 
   // For development, use the Rork tunnel URL
   if (typeof window !== 'undefined') {
-    // Web environment - check if we're on a rork.live domain
+    // Web environment - check if we're on a rork.live or rork.ai domain
     const origin = window.location.origin;
-    if (origin.includes('rork.live')) {
-      console.log('🌍 Using window origin (rork.live):', origin);
+    if (origin.includes('rork.live') || origin.includes('rork.ai')) {
+      console.log('🌍 Using window origin:', origin);
       return origin;
     }
-    // Otherwise use the tunnel URL
-    console.log('🌍 Using tunnel URL from web');
   }
   
-  // For mobile development and fallback, use the tunnel URL
-  const tunnelUrl = 'https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live';
-  console.log('🌍 Using tunnel URL:', tunnelUrl);
-  return tunnelUrl;
+  // Fallback to production URL
+  const fallbackUrl = 'https://chopchoofooddeliveries.rork.ai';
+  console.log('🌍 Using fallback URL:', fallbackUrl);
+  return fallbackUrl;
 };
 
 const createTRPCClientConfig = () => ({

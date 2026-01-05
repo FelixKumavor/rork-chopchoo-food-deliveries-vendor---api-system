@@ -19,9 +19,19 @@ export default function DebugScreen() {
 
   // Remove unused hiQuery to fix lint warning
 
+  const getBaseUrl = () => {
+    if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
+      return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+    }
+    return 'https://chopchoofooddeliveries.rork.ai';
+  };
+
   const runConnectivityTests = async () => {
     setIsRunning(true);
     setTests({});
+
+    const baseUrl = getBaseUrl();
+    console.log('🌍 Using base URL:', baseUrl);
 
     // Test 0: Network connectivity
     try {
@@ -58,7 +68,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, basicApi: { status: 'pending', message: 'Testing basic API...' } }));
       
-      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api', {
+      const response = await fetch(`${baseUrl}/api`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -95,7 +105,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, debugApi: { status: 'pending', message: 'Testing debug endpoint...' } }));
       
-      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api/debug', {
+      const response = await fetch(`${baseUrl}/api/debug`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -132,7 +142,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, trpcDirect: { status: 'pending', message: 'Testing tRPC endpoint directly...' } }));
       
-      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api/trpc/example.hi', {
+      const response = await fetch(`${baseUrl}/api/trpc/example.hi`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
