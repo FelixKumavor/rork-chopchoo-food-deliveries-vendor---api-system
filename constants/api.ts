@@ -1,4 +1,4 @@
-export const API_BASE_URL = "https://chopchoofooddeliveries.rork.ai";
+export const API_BASE_URL = "https://api.chopchoo.com";
 
 export const API_ENDPOINTS = {
   // Vendor endpoints
