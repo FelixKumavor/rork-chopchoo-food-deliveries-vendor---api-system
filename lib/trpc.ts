@@ -26,8 +26,7 @@ const getBaseUrl = () => {
   }
   
   // For mobile development and fallback, use the tunnel URL
-  // Use the current active tunnel URL
-  const tunnelUrl = 'https://chopchoofooddeliveries.rork.ai';
+  const tunnelUrl = 'https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live';
   console.log('🌍 Using tunnel URL:', tunnelUrl);
   return tunnelUrl;
 };
@@ -61,7 +60,7 @@ const createTRPCClientConfig = () => ({
         try {
           // Add timeout to prevent hanging requests
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
           
           const response = await fetch(url, {
             ...options,

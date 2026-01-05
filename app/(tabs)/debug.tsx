@@ -27,25 +27,17 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, network: { status: 'pending', message: 'Testing network connectivity...' } }));
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
       const response = await fetch('https://httpbin.org/get', {
         method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        signal: controller.signal
+        headers: { 'Accept': 'application/json' }
       });
       
-      clearTimeout(timeoutId);
-      
       if (response.ok) {
-        const data = await response.json();
         setTests(prev => ({ 
           ...prev, 
           network: { 
             status: 'success', 
-            message: 'Network connectivity working',
-            data: { status: response.status, origin: data.origin }
+            message: 'Network connectivity working' 
           } 
         }));
       } else {
@@ -57,7 +49,7 @@ export default function DebugScreen() {
         ...prev, 
         network: { 
           status: 'error', 
-          message: `❌ Connectivity test failed: ${error.name === 'AbortError' ? 'Request timeout' : error.message}` 
+          message: `❌ Connectivity test failed: ${error.message}` 
         } 
       }));
     }
@@ -66,7 +58,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, basicApi: { status: 'pending', message: 'Testing basic API...' } }));
       
-      const response = await fetch('https://chopchoofooddeliveries.rork.ai/api', {
+      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -103,7 +95,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, debugApi: { status: 'pending', message: 'Testing debug endpoint...' } }));
       
-      const response = await fetch('https://chopchoofooddeliveries.rork.ai/api/debug', {
+      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api/debug', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -140,7 +132,7 @@ export default function DebugScreen() {
     try {
       setTests(prev => ({ ...prev, trpcDirect: { status: 'pending', message: 'Testing tRPC endpoint directly...' } }));
       
-      const response = await fetch('https://chopchoofooddeliveries.rork.ai/api/trpc/example.hi', {
+      const response = await fetch('https://8f742ee5-9c96-4f0f-8875-7e1b345fc0ab.rork.live/api/trpc/example.hi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,17 +256,16 @@ export default function DebugScreen() {
       
       // Use tRPC client for vendor endpoints
       const { trpcClient } = await import('@/lib/trpc');
-      const data = await trpcClient.vendors.get.query();
-      
-      if ((data as any).error) {
-        throw new Error((data as any).message || 'Vendor endpoint returned error');
-      }
+      const data = await trpcClient.vendors.get.query({
+        limit: 5,
+        offset: 0
+      });
       
       setTests(prev => ({ 
         ...prev, 
         vendors: { 
           status: 'success', 
-          message: `✅ Vendor endpoint working: ${(data as any).vendors ? (data as any).vendors.length + ' vendors' : 'fallback response'}`, 
+          message: `✅ Found ${data.vendors.length} vendors`, 
           data 
         } 
       }));
@@ -294,17 +285,13 @@ export default function DebugScreen() {
       setTests(prev => ({ ...prev, vendorBySlug: { status: 'pending', message: 'Testing vendor by slug...' } }));
       
       const { trpcClient } = await import('@/lib/trpc');
-      const data = await trpcClient.vendors.getBySlug.query();
-      
-      if ((data as any).error) {
-        throw new Error((data as any).message || 'Vendor by slug endpoint returned error');
-      }
+      const data = await trpcClient.vendors.getBySlug.query({ slug: 'mamas-kitchen' });
       
       setTests(prev => ({ 
         ...prev, 
         vendorBySlug: { 
           status: 'success', 
-          message: `✅ Vendor by slug endpoint working: ${(data as any).vendor ? (data as any).vendor.name : 'fallback response'}`, 
+          message: `✅ Found vendor: ${data.vendor.name}`, 
           data 
         } 
       }));
@@ -315,39 +302,6 @@ export default function DebugScreen() {
         vendorBySlug: { 
           status: 'error', 
           message: `❌ Vendor by slug failed: ${error.message}` 
-        } 
-      }));
-    }
-
-    // Test 7: Cart functionality
-    try {
-      setTests(prev => ({ ...prev, cart: { status: 'pending', message: 'Testing cart functionality...' } }));
-      
-      const { CartManager } = await import('@/utils/cart');
-      
-      // Test cart operations
-      await CartManager.clearCart();
-      const emptyCart = await CartManager.getCart();
-      
-      if (emptyCart === null) {
-        setTests(prev => ({ 
-          ...prev, 
-          cart: { 
-            status: 'success', 
-            message: '✅ Cart functionality working', 
-            data: { emptyCart: 'null', operations: 'clear, get' }
-          } 
-        }));
-      } else {
-        throw new Error('Cart should be null after clearing');
-      }
-    } catch (error: any) {
-      console.error('❌ Cart test failed:', error.message);
-      setTests(prev => ({ 
-        ...prev, 
-        cart: { 
-          status: 'error', 
-          message: `❌ Cart test failed: ${error.message}` 
         } 
       }));
     }
