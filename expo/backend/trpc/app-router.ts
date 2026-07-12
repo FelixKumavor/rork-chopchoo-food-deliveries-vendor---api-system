@@ -30,6 +30,15 @@ import updateNotificationsRoute from "@/backend/trpc/routes/notifications/update
 import { createVendorProcedure } from "@/backend/trpc/routes/vendors/create/route";
 import { getVendorsProcedure } from "@/backend/trpc/routes/vendors/get/route";
 import { getVendorBySlugProcedure } from "@/backend/trpc/routes/vendors/get-by-slug/route";
+import { vendorLoginProcedure } from "@/backend/trpc/routes/vendors/login/route";
+import {
+  adminListVendorsProcedure,
+  adminGetVendorProcedure,
+} from "@/backend/trpc/routes/vendors/admin-list/route";
+import { approveVendorProcedure } from "@/backend/trpc/routes/vendors/approve/route";
+import { rejectVendorProcedure } from "@/backend/trpc/routes/vendors/reject/route";
+import { suspendVendorProcedure } from "@/backend/trpc/routes/vendors/suspend/route";
+import { reactivateVendorProcedure } from "@/backend/trpc/routes/vendors/reactivate/route";
 
 console.log('🔧 Building tRPC router...');
 
@@ -115,6 +124,13 @@ export const appRouter = createTRPCRouter({
     create: createVendorProcedure,
     get: getVendorsProcedure,
     getBySlug: getVendorBySlugProcedure,
+    login: vendorLoginProcedure,
+    adminList: adminListVendorsProcedure,
+    adminGet: adminGetVendorProcedure,
+    approve: approveVendorProcedure,
+    reject: rejectVendorProcedure,
+    suspend: suspendVendorProcedure,
+    reactivate: reactivateVendorProcedure,
   }),
 });
 

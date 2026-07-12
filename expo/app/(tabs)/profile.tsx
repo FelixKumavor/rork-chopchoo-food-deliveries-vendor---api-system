@@ -18,13 +18,16 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Shield,
+  Store,
+  Lock,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/providers/auth-provider";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin, isVendor } = useAuth();
 
   const handleLogout = () => {
     Alert.alert(
@@ -128,18 +131,77 @@ export default function ProfileScreen() {
         </View>
 
         {/* Vendor Section */}
-        <TouchableOpacity
-          style={styles.vendorCard}
-          onPress={() => router.push("/vendor-signup")}
-        >
-          <View style={styles.vendorContent}>
-            <Text style={styles.vendorTitle}>Become a Partner</Text>
-            <Text style={styles.vendorSubtitle}>
-              Start earning with your restaurant
-            </Text>
-          </View>
-          <ChevronRight size={20} color="#4ECDC4" />
-        </TouchableOpacity>
+        {!isVendor && (
+          <TouchableOpacity
+            style={styles.vendorCard}
+            onPress={() => router.push("/vendor-signup")}
+          >
+            <View style={styles.vendorContent}>
+              <Text style={styles.vendorTitle}>Become a Partner</Text>
+              <Text style={styles.vendorSubtitle}>
+                Start earning with your restaurant
+              </Text>
+            </View>
+            <ChevronRight size={20} color="#4ECDC4" />
+          </TouchableOpacity>
+        )}
+
+        {/* Vendor Login */}
+        {!isVendor && (
+          <TouchableOpacity
+            style={styles.vendorLoginCard}
+            onPress={() => router.push("/vendor-login")}
+          >
+            <View style={styles.vendorLoginIcon}>
+              <Store size={20} color="#FF6B35" />
+            </View>
+            <View style={styles.vendorLoginContent}>
+              <Text style={styles.vendorLoginTitle}>Vendor Login</Text>
+              <Text style={styles.vendorLoginSubtitle}>
+                Already have a vendor account?
+              </Text>
+            </View>
+            <ChevronRight size={20} color="#C7C7CC" />
+          </TouchableOpacity>
+        )}
+
+        {/* Admin Dashboard */}
+        {isAdmin && (
+          <TouchableOpacity
+            style={styles.adminCard}
+            onPress={() => router.push("/admin")}
+          >
+            <View style={styles.adminIcon}>
+              <Shield size={20} color="white" />
+            </View>
+            <View style={styles.adminContent}>
+              <Text style={styles.adminTitle}>Admin Dashboard</Text>
+              <Text style={styles.adminSubtitle}>
+                Approve and manage vendors
+              </Text>
+            </View>
+            <ChevronRight size={20} color="white" />
+          </TouchableOpacity>
+        )}
+
+        {/* Admin Login (for when not logged in as admin) */}
+        {!isAdmin && (
+          <TouchableOpacity
+            style={styles.adminLoginCard}
+            onPress={() => router.push("/admin-login")}
+          >
+            <View style={styles.adminLoginIcon}>
+              <Lock size={18} color="#6B7280" />
+            </View>
+            <View style={styles.adminLoginContent}>
+              <Text style={styles.adminLoginTitle}>Admin Login</Text>
+              <Text style={styles.adminLoginSubtitle}>
+                Access the admin dashboard
+              </Text>
+            </View>
+            <ChevronRight size={20} color="#C7C7CC" />
+          </TouchableOpacity>
+        )}
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -266,9 +328,106 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     padding: 20,
     borderRadius: 12,
-    marginBottom: 24,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: "#4ECDC4",
+  },
+  vendorLoginCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    marginHorizontal: 20,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#FFE0D0",
+  },
+  vendorLoginIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFF5F0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  vendorLoginContent: {
+    flex: 1,
+  },
+  vendorLoginTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  vendorLoginSubtitle: {
+    fontSize: 13,
+    color: "#8E8E93",
+  },
+  adminCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1F2937",
+    marginHorizontal: 20,
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  adminIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,107,53,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  adminContent: {
+    flex: 1,
+  },
+  adminTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 2,
+  },
+  adminSubtitle: {
+    fontSize: 13,
+    color: "#9CA3AF",
+  },
+  adminLoginCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    marginHorizontal: 20,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  adminLoginIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  adminLoginContent: {
+    flex: 1,
+  },
+  adminLoginTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  adminLoginSubtitle: {
+    fontSize: 13,
+    color: "#8E8E93",
   },
   vendorContent: {
     flex: 1,

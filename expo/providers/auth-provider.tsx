@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import createContextHook from "@nkzw/create-context-hook";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DeliveryAddress, PaymentMethod } from "@/types/vendor";
+import { trpc } from "@/lib/trpc";
+import type { DeliveryAddress, PaymentMethod, Vendor } from "@/types/vendor";
 
 interface User {
   id: string;
@@ -10,21 +12,33 @@ interface User {
   role: "customer" | "vendor" | "admin";
   addresses?: DeliveryAddress[];
   payment_methods?: PaymentMethod[];
+  vendorData?: Vendor;
+  avatar?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginAsVendor: (email: string, password: string) => Promise<void>;
+  loginAsAdmin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (userData: Partial<User>) => Promise<void>;
+  isAdmin: boolean;
+  isVendor: boolean;
+  isApprovedVendor: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const ADMIN_CREDENTIALS = {
+  email: "admin@chopchoo.com",
+  password: "admin123",
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const [AuthProvider, useAuth] = createContextHook(() => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const vendorLoginMutation = trpc.vendors.login.useMutation();
 
   useEffect(() => {
     loadUser();
@@ -45,7 +59,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      // Mock login - replace with actual API call
+      // Check if admin
+      if (
+        email === ADMIN_CREDENTIALS.email &&
+        password === ADMIN_CREDENTIALS.password
+      ) {
+        const adminUser: User = {
+          id: "admin_1",
+          name: "System Admin",
+          email,
+          phone: "+233 20 000 0000",
+          role: "admin",
+        };
+        await AsyncStorage.setItem("user", JSON.stringify(adminUser));
+        setUser(adminUser);
+        return;
+      }
+
+      // Mock customer login
       const mockUser: User = {
         id: "1",
         name: "John Doe",
@@ -59,26 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             phone: "+233 20 123 4567",
             address: "123 Liberation Road, Accra",
             city: "Accra",
-            coordinates: {
-              latitude: 5.6037,
-              longitude: -0.1870
-            },
+            coordinates: { latitude: 5.6037, longitude: -0.187 },
             instructions: "Apartment 2B, blue gate",
-            is_default: true
+            is_default: true,
           },
-          {
-            id: "addr_2",
-            name: "Office",
-            phone: "+233 20 123 4567",
-            address: "456 Oxford Street, Osu",
-            city: "Accra",
-            coordinates: {
-              latitude: 5.5502,
-              longitude: -0.1767
-            },
-            instructions: "3rd floor, office building",
-            is_default: false
-          }
         ],
         payment_methods: [
           {
@@ -86,21 +101,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             type: "mobile_money",
             provider: "mtn",
             phone_number: "+233 20 123 4567",
-            is_default: true
+            is_default: true,
           },
-          {
-            id: "pm_2",
-            type: "card",
-            last_four: "1234",
-            is_default: false
-          }
-        ]
+        ],
       };
-      
       await AsyncStorage.setItem("user", JSON.stringify(mockUser));
       setUser(mockUser);
     } catch (error) {
       console.error("Login error:", error);
+      throw error;
+    }
+  };
+
+  const loginAsVendor = async (email: string, password: string) => {
+    try {
+      const result = await vendorLoginMutation.mutateAsync({ email, password });
+      const vendorUser: User = {
+        id: result.vendor.id,
+        name: result.vendor.name,
+        email: result.vendor.email,
+        phone: result.vendor.phone,
+        role: "vendor",
+        vendorData: result.vendor,
+      };
+      await AsyncStorage.setItem("user", JSON.stringify(vendorUser));
+      setUser(vendorUser);
+    } catch (error) {
+      console.error("Vendor login error:", error);
+      throw error;
+    }
+  };
+
+  const loginAsAdmin = async (email: string, password: string) => {
+    try {
+      if (
+        email !== ADMIN_CREDENTIALS.email ||
+        password !== ADMIN_CREDENTIALS.password
+      ) {
+        throw new Error("Invalid admin credentials");
+      }
+      const adminUser: User = {
+        id: "admin_1",
+        name: "System Admin",
+        email,
+        phone: "+233 20 000 0000",
+        role: "admin",
+      };
+      await AsyncStorage.setItem("user", JSON.stringify(adminUser));
+      setUser(adminUser);
+    } catch (error) {
+      console.error("Admin login error:", error);
       throw error;
     }
   };
@@ -116,7 +166,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (userData: Partial<User>) => {
     try {
-      // Mock registration - replace with actual API call
       const newUser: User = {
         id: Date.now().toString(),
         name: userData.name || "",
@@ -124,9 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phone: userData.phone || "",
         role: userData.role || "customer",
         addresses: [],
-        payment_methods: []
+        payment_methods: [],
       };
-      
       await AsyncStorage.setItem("user", JSON.stringify(newUser));
       setUser(newUser);
     } catch (error) {
@@ -135,25 +183,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        login,
-        logout,
-        register,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  const isAdmin = user?.role === "admin";
+  const isVendor = user?.role === "vendor";
+  const isApprovedVendor =
+    isVendor && user?.vendorData?.status === "approved";
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-}
+  return useMemo(
+    () => ({
+      user,
+      isLoading,
+      login,
+      loginAsVendor,
+      loginAsAdmin,
+      logout,
+      register,
+      isAdmin,
+      isVendor,
+      isApprovedVendor,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, isLoading, isAdmin, isVendor, isApprovedVendor]
+  );
+});

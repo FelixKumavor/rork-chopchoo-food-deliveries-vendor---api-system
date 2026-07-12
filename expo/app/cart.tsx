@@ -69,6 +69,7 @@ export default function CartScreen() {
             slug: "mamas-kitchen",
             logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
             cuisine_type: "Ghanaian",
+            business_category: "Restaurant" as const,
             address: "123 Oxford Street, Osu",
             city: "Accra",
             phone: "+233 20 123 4567",
@@ -76,7 +77,8 @@ export default function CartScreen() {
             rating: 4.5,
             is_active: true,
             status: "approved" as const,
-            created_at: "2024-01-01T00:00:00Z"
+            created_at: "2024-01-01T00:00:00Z",
+            updated_at: "2024-01-01T00:00:00Z"
           };
 
           const testMenuItem = {

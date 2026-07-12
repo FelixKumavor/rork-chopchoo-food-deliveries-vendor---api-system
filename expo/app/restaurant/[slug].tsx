@@ -77,6 +77,7 @@ export default function RestaurantScreen() {
       slug: "mamas-kitchen",
       logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
       cuisine_type: "Ghanaian",
+      business_category: "Restaurant" as const,
       address: "123 Oxford Street, Osu",
       city: "Accra",
       phone: "+233 20 123 4567",
@@ -86,6 +87,7 @@ export default function RestaurantScreen() {
       status: "approved" as const,
       delivery_radius: 5,
       created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
       menu_items: [
         {
           id: "1",
@@ -122,6 +124,7 @@ export default function RestaurantScreen() {
       slug: "pizza-palace",
       logo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&h=300&fit=crop&crop=center",
       cuisine_type: "Italian",
+      business_category: "Restaurant" as const,
       address: "456 Ring Road, East Legon",
       city: "Accra",
       phone: "+233 20 234 5678",
@@ -131,6 +134,7 @@ export default function RestaurantScreen() {
       status: "approved" as const,
       delivery_radius: 8,
       created_at: "2024-01-02T00:00:00Z",
+      updated_at: "2024-01-02T00:00:00Z",
       menu_items: [
         {
           id: "4",
@@ -158,6 +162,7 @@ export default function RestaurantScreen() {
       slug: "burger-spot",
       logo: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=300&h=300&fit=crop&crop=center",
       cuisine_type: "Fast Food",
+      business_category: "Fast Food" as const,
       address: "789 Spintex Road, Tema",
       city: "Tema",
       phone: "+233 20 345 6789",
@@ -167,6 +172,7 @@ export default function RestaurantScreen() {
       status: "approved" as const,
       delivery_radius: 6,
       created_at: "2024-01-03T00:00:00Z",
+      updated_at: "2024-01-03T00:00:00Z",
       menu_items: [
         {
           id: "6",
@@ -200,6 +206,7 @@ export default function RestaurantScreen() {
     slug: "demo-restaurant",
     logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
     cuisine_type: "International",
+    business_category: "Restaurant" as const,
     address: "123 Demo Street",
     city: "Demo City",
     phone: "+233 20 000 0000",
@@ -209,6 +216,7 @@ export default function RestaurantScreen() {
     status: "approved" as const,
     delivery_radius: 5,
     created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
     menu_items: mockMenuItems.map(item => ({
       ...item,
       vendor_id: "vendor_fallback",
@@ -228,7 +236,7 @@ export default function RestaurantScreen() {
     if (!finalVendor) return;
     
     // Use menu items from vendor data if available, otherwise use mock data
-    const menuItems = finalVendor?.menu_items || mockMenuItems;
+    const menuItems = (finalVendor as any)?.menu_items || mockMenuItems;
     const menuItem = menuItems.find((item: any) => item.id === itemId);
     if (!menuItem) return;
     
@@ -393,7 +401,7 @@ export default function RestaurantScreen() {
 
       {/* Menu Items */}
       <FlatList
-        data={finalVendor?.menu_items || mockMenuItems}
+        data={(finalVendor as any)?.menu_items || mockMenuItems}
         renderItem={renderMenuItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.menuList}

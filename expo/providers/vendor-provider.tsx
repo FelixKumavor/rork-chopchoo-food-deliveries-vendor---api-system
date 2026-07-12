@@ -3,21 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { trpc } from '@/lib/trpc';
 
-interface Vendor {
-  id: string;
-  name: string;
-  slug: string;
-  logo: string;
-  cuisine_type: string;
-  address: string;
-  city: string;
-  phone: string;
-  email: string;
-  rating: number;
-  is_active: boolean;
-  status: "pending" | "approved" | "rejected";
-  created_at: string;
-}
+import type { Vendor } from '@/types/vendor';
 
 export const [VendorProvider, useVendorStore] = createContextHook(() => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -72,6 +58,7 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
           slug: "mamas-kitchen",
           logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=300&fit=crop&crop=center",
           cuisine_type: "Ghanaian",
+          business_category: "Restaurant",
           address: "123 Oxford Street, Osu",
           city: "Accra",
           phone: "+233 20 123 4567",
@@ -80,6 +67,7 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
           is_active: true,
           status: "approved",
           created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
         },
         {
           id: "2",
@@ -87,6 +75,7 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
           slug: "pizza-palace",
           logo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&h=300&fit=crop&crop=center",
           cuisine_type: "Italian",
+          business_category: "Restaurant",
           address: "456 Ring Road, East Legon",
           city: "Accra",
           phone: "+233 20 234 5678",
@@ -95,6 +84,7 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
           is_active: true,
           status: "approved",
           created_at: "2024-01-02T00:00:00Z",
+          updated_at: "2024-01-02T00:00:00Z",
         },
         {
           id: "3",
@@ -102,6 +92,7 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
           slug: "burger-spot",
           logo: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=300&h=300&fit=crop&crop=center",
           cuisine_type: "Fast Food",
+          business_category: "Fast Food",
           address: "789 Spintex Road, Tema",
           city: "Tema",
           phone: "+233 20 345 6789",
@@ -110,6 +101,7 @@ export const [VendorProvider, useVendorStore] = createContextHook(() => {
           is_active: true,
           status: "approved",
           created_at: "2024-01-03T00:00:00Z",
+          updated_at: "2024-01-03T00:00:00Z",
         },
       ];
 

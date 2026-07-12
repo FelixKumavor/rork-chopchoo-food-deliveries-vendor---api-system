@@ -1,17 +1,40 @@
+export type VendorStatus = "pending" | "approved" | "rejected" | "suspended";
+
+export type BusinessCategory =
+  | "Restaurant"
+  | "Grocery"
+  | "Pharmacy"
+  | "Bakery"
+  | "Cafe"
+  | "Fast Food"
+  | "Beverages"
+  | "Other";
+
 export interface Vendor {
   id: string;
   name: string;
   slug: string;
   logo: string;
+  cover_image?: string;
+  gallery_images?: string[];
   cuisine_type: string;
+  business_category: BusinessCategory;
+  business_description?: string;
   address: string;
   city: string;
   phone: string;
   email: string;
+  password?: string;
   rating: number;
   is_active: boolean;
-  status: "pending" | "approved" | "rejected";
+  status: VendorStatus;
   created_at: string;
+  updated_at: string;
+  approved_at?: string;
+  rejected_at?: string;
+  suspended_at?: string;
+  admin_notes?: string;
+  rejection_reason?: string;
   delivery_radius?: number;
   opening_hours?: {
     [key: string]: {
@@ -212,10 +235,13 @@ export interface Cart {
 export interface VendorSignupData {
   restaurant_name: string;
   business_type: string;
+  business_category: BusinessCategory;
+  business_description?: string;
   cuisine_type: string;
   owner_name: string;
   email: string;
   phone: string;
+  password: string;
   address: string;
   city: string;
   coordinates?: {
@@ -243,6 +269,8 @@ export interface VendorSignupData {
     image?: string;
   }[];
   logo?: string;
+  cover_image?: string;
+  gallery_images?: string[];
   documents?: {
     business_registration?: string;
     food_license?: string;
