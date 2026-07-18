@@ -30,7 +30,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.chopchoo-food-deliveries-vendor-api",
+      "package": "app.rork.chopchoo_food_deliveries_vendor_api123",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
